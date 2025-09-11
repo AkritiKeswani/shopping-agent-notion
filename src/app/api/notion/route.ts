@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
       Brand: deal.brand,
       'Original Price': deal.originalPrice,
       'Sale Price': deal.salePrice,
-      'Discount %': deal.discount,
       Size: deal.size,
       'Clothing Type': deal.clothingType,
       'Image URL': deal.imageUrl,
@@ -37,7 +36,6 @@ export async function POST(request: NextRequest) {
           Brand: { select: { name: deal.Brand } },
           'Original Price': { number: deal['Original Price'] },
           'Sale Price': { number: deal['Sale Price'] },
-          'Discount %': { number: deal['Discount %'] },
           Size: { rich_text: [{ text: { content: deal.Size } }] },
           'Clothing Type': { select: { name: deal['Clothing Type'] } },
           'Image URL': { url: deal['Image URL'] },
@@ -83,23 +81,22 @@ export async function GET() {
       database_id: process.env.NOTION_DATABASE_ID!,
     });
 
-    const deals = response.results.map((page: any) => {
-      const props = page.properties;
-      return {
-        id: page.id,
-        title: props.Title?.title?.[0]?.text?.content || '',
-        brand: props.Brand?.select?.name || '',
-        originalPrice: props['Original Price']?.number || 0,
-        salePrice: props['Sale Price']?.number || 0,
-        discount: props['Discount %']?.number || 0,
-        size: props.Size?.rich_text?.[0]?.text?.content || '',
-        clothingType: props['Clothing Type']?.select?.name || '',
-        imageUrl: props['Image URL']?.url || '',
-        productUrl: props['Product URL']?.url || '',
-        inStock: props['In Stock']?.checkbox || false,
-        scrapedAt: props['Scraped At']?.date?.start || '',
-      };
-    });
+      const deals = response.results.map((page: any) => {
+        const props = page.properties;
+        return {
+          id: page.id,
+          title: props.Title?.title?.[0]?.text?.content || '',
+          brand: props.Brand?.select?.name || '',
+          originalPrice: props['Original Price']?.number || 0,
+          salePrice: props['Sale Price']?.number || 0,
+          size: props.Size?.rich_text?.[0]?.text?.content || '',
+          clothingType: props['Clothing Type']?.select?.name || '',
+          imageUrl: props['Image URL']?.url || '',
+          productUrl: props['Product URL']?.url || '',
+          inStock: props['In Stock']?.checkbox || false,
+          scrapedAt: props['Scraped At']?.date?.start || '',
+        };
+      });
 
     return NextResponse.json({
       success: true,

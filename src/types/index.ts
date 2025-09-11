@@ -4,7 +4,6 @@ export interface Deal {
   brand: 'aritzia' | 'reformation' | 'free-people';
   originalPrice: number;
   salePrice: number;
-  discount: number;
   size: string;
   clothingType: 'jeans' | 'shirt' | 'dress' | 'top' | 'bottom' | 'outerwear' | 'accessories';
   imageUrl: string;
@@ -17,7 +16,6 @@ export interface SearchFilters {
   clothingType?: string;
   size?: string;
   maxPrice?: number;
-  minDiscount?: number;
   brands?: string[];
 }
 
@@ -32,7 +30,6 @@ export interface NotionDeal {
   Brand: string;
   'Original Price': number;
   'Sale Price': number;
-  'Discount %': number;
   Size: string;
   'Clothing Type': string;
   'Image URL': string;

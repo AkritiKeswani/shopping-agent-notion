@@ -29,7 +29,7 @@ export class ShoppingScraper {
         errors: [`Scraping failed: ${error}`],
       };
     } finally {
-      await this.stagehandScraper.cleanup();
+      // Cleanup is handled by StagehandScraper internally
     }
   }
 
@@ -37,7 +37,6 @@ export class ShoppingScraper {
     return products.filter(product => {
       if (filters.size && !product.size.toLowerCase().includes(filters.size.toLowerCase())) return false;
       if (filters.maxPrice && product.salePrice > filters.maxPrice) return false;
-      if (filters.minDiscount && product.discount < filters.minDiscount) return false;
       if (filters.brands && !filters.brands.includes(product.brand)) return false;
       if (filters.clothingType && product.clothingType !== filters.clothingType) return false;
       return true;

@@ -100,14 +100,14 @@ export class StagehandScraper {
 
       const url = filters.clothingType ? saleUrls[filters.clothingType as keyof typeof saleUrls] : `${baseUrl}/us/en/sale`;
 
-      await page.goto(url);
+      await page.goto(url, { waitUntil: 'networkidle2' });
 
-      // Wait for products to load
-      await page.waitForSelector('[data-testid="product-tile"], .product-tile, .product-item', { timeout: 10000 });
+      // Wait a bit for the page to load
+      await page.waitForTimeout(3000);
 
-      // Extract products using Stagehand's AI-powered extraction
+      // Use Stagehand's AI to find and extract products without relying on specific selectors
       const products = await page.extract({
-        instruction: `Extract all sale products from this page. For each product, get the title, original price, sale price, image URL, and product URL. If there's only one price shown, use it as both original and sale price.`,
+        instruction: `Look for any product items on this Aritzia sale page. Find products that are on sale with reduced prices. For each product you find, extract the title, original price, sale price, image URL, and product URL. If there's only one price shown, use it as both original and sale price. Look for any product containers, cards, or tiles on the page.`,
         schema: z.object({
           products: z.array(ProductSchema),
         }),
@@ -142,12 +142,13 @@ export class StagehandScraper {
 
       const url = filters.clothingType ? saleUrls[filters.clothingType as keyof typeof saleUrls] : `${baseUrl}/collections/sale`;
 
-      await page.goto(url);
+      await page.goto(url, { waitUntil: 'networkidle2' });
 
-      await page.waitForSelector('.product-item, .product-card, [data-product]', { timeout: 10000 });
+      // Wait a bit for the page to load
+      await page.waitForTimeout(3000);
 
       const products = await page.extract({
-        instruction: `Extract all sale products from this Reformation sale page. For each product, get the title, original price, sale price, image URL, and product URL.`,
+        instruction: `Look for any product items on this Reformation sale page. Find products that are on sale with reduced prices. For each product you find, extract the title, original price, sale price, image URL, and product URL. Look for any product containers, cards, or tiles on the page.`,
         schema: z.object({
           products: z.array(ProductSchema),
         }),
@@ -182,12 +183,13 @@ export class StagehandScraper {
 
       const url = filters.clothingType ? saleUrls[filters.clothingType as keyof typeof saleUrls] : `${baseUrl}/sale`;
 
-      await page.goto(url);
+      await page.goto(url, { waitUntil: 'networkidle2' });
 
-      await page.waitForSelector('.product-item, .product-tile, [data-product]', { timeout: 10000 });
+      // Wait a bit for the page to load
+      await page.waitForTimeout(3000);
 
       const products = await page.extract({
-        instruction: `Extract all sale products from this Free People sale page. For each product, get the title, original price, sale price, image URL, and product URL.`,
+        instruction: `Look for any product items on this Free People sale page. Find products that are on sale with reduced prices. For each product you find, extract the title, original price, sale price, image URL, and product URL. Look for any product containers, cards, or tiles on the page.`,
         schema: z.object({
           products: z.array(ProductSchema),
         }),
@@ -209,7 +211,6 @@ export class StagehandScraper {
       brand,
       originalPrice: product.originalPrice || 0,
       salePrice: product.salePrice || 0,
-      discount: this.calculateDiscount(product.originalPrice || 0, product.salePrice || 0),
       size: product.size || 'One Size',
       clothingType: this.mapClothingType(product.category || 'top'),
       imageUrl: product.imageUrl || '',
@@ -217,11 +218,6 @@ export class StagehandScraper {
       inStock: product.inStock !== false,
       scrapedAt: new Date(),
     }));
-  }
-
-  private calculateDiscount(originalPrice: number, salePrice: number): number {
-    if (originalPrice === 0) return 0;
-    return Math.round(((originalPrice - salePrice) / originalPrice) * 100);
   }
 
   private mapClothingType(category: string): 'jeans' | 'shirt' | 'dress' | 'top' | 'bottom' | 'outerwear' | 'accessories' {
