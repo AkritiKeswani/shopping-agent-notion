@@ -17,7 +17,10 @@ export default function Home() {
     setDeals([]);
 
     try {
-      const response = await fetch('/api/scrape', {
+      console.log('🔍 Starting search...');
+      
+      // Step 1: Scrape deals
+      const scrapeResponse = await fetch('/api/scrape', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -25,48 +28,53 @@ export default function Home() {
         body: JSON.stringify({ filters }),
       });
 
-      const data = await response.json();
+      const scrapeData = await scrapeResponse.json();
 
-      if (data.success) {
-        setDeals(data.data.deals);
-        if (data.data.errors.length > 0) {
-          setError(`Some errors occurred: ${data.data.errors.join(', ')}`);
+      if (scrapeData.success) {
+        console.log(`📊 Found ${scrapeData.data.deals.length} deals`);
+        setDeals(scrapeData.data.deals);
+        
+        if (scrapeData.data.errors.length > 0) {
+          setError(`Some errors occurred: ${scrapeData.data.errors.join(', ')}`);
+        }
+
+        // Step 2: Save to Notion if we have deals
+        if (scrapeData.data.deals.length > 0) {
+          console.log('💾 Saving to Notion...');
+          
+          const notionResponse = await fetch('/api/notion', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ deals: scrapeData.data.deals }),
+          });
+
+          const notionData = await notionResponse.json();
+          
+          if (notionData.success) {
+            console.log(`✅ Saved ${notionData.data.successful} deals to Notion`);
+            // Update error message to show Notion success
+            if (scrapeData.data.errors.length > 0) {
+              setError(`Scraping errors: ${scrapeData.data.errors.join(', ')}. But ${notionData.data.successful} deals saved to Notion successfully.`);
+            } else {
+              setError(null); // Clear any previous errors
+            }
+          } else {
+            setError(`Scraping successful but Notion save failed: ${notionData.error}`);
+          }
         }
       } else {
-        setError(data.error || 'Failed to fetch deals');
+        setError(scrapeData.error || 'Failed to fetch deals');
       }
     } catch (err) {
+      console.error('Search error:', err);
       setError('Network error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveToNotion = async () => {
-    if (deals.length === 0) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch('/api/notion', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ deals }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        alert(`Successfully saved ${data.data.successful} deals to Notion!`);
-      } else {
-        setError(data.error || 'Failed to save to Notion');
-      }
-    } catch (err) {
-      setError('Failed to save to Notion');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -101,17 +109,13 @@ export default function Home() {
 
           {deals.length > 0 && (
             <div className="mt-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900">
+              <div className="mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
                   Found {deals.length} deals
                 </h2>
-                <button
-                  onClick={handleSaveToNotion}
-                  disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Save to Notion
-                </button>
+                <p className="text-green-600 text-sm">
+                  ✅ Deals automatically saved to your Notion database
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

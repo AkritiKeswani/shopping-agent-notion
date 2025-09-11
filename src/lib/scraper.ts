@@ -1,45 +1,28 @@
 import { SimpleScraper } from './simple-scraper';
-import { AIOptimizer } from './ai-optimizer';
 import { Deal, ScrapingResult, SearchFilters } from '@/types';
 
 export class ShoppingScraper {
   private simpleScraper: SimpleScraper;
-  private aiOptimizer: AIOptimizer;
 
   constructor() {
     this.simpleScraper = new SimpleScraper();
-    this.aiOptimizer = new AIOptimizer();
   }
 
-  async scrapeAllBrands(filters: SearchFilters, userPreferences?: string): Promise<ScrapingResult> {
+  async scrapeAllBrands(filters: SearchFilters): Promise<ScrapingResult> {
     try {
-      console.log('🔍 Starting scraping with AI optimization...');
+      console.log('🔍 Starting simple scraping...');
       
-      // First, scrape all deals
+      // Scrape main pages for best sellers
       const result = await this.simpleScraper.scrapeAllBrands(filters);
-      console.log(`📊 Found ${result.deals.length} raw deals`);
+      console.log(`📊 Found ${result.deals.length} deals from main pages`);
       
-      if (result.deals.length === 0) {
-        return {
-          deals: [],
-          totalFound: 0,
-          errors: result.errors,
-        };
-      }
-      
-      // Apply basic filtering first
+      // Simple filtering - just basic criteria
       const filteredDeals = this.filterProducts(result.deals, filters);
-      console.log(`🎯 After filtering: ${filteredDeals.length} deals`);
-      
-      // Use AI to optimize and select the best deals
-      console.log('🤖 AI optimizing deals...');
-      const optimization = await this.aiOptimizer.optimizeDeals(filteredDeals, filters, userPreferences);
-      console.log(`✨ AI selected ${optimization.optimizedDeals.length} optimal deals`);
-      console.log(`💭 AI reasoning: ${optimization.reasoning}`);
+      console.log(`🎯 After basic filtering: ${filteredDeals.length} deals`);
       
       return {
-        deals: optimization.optimizedDeals,
-        totalFound: optimization.optimizedDeals.length,
+        deals: filteredDeals,
+        totalFound: filteredDeals.length,
         errors: result.errors,
       };
       
