@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ShoppingScraper } from '@/lib/scraper';
+import { BackgroundAgentsService } from '@/lib/background-agents';
 import { SearchFilters } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const filters: SearchFilters = body.filters || {};
-    console.log('🚀 Starting scraping with filters:', filters);
+    console.log('🚀 Starting Background Agent scraping with filters:', filters);
 
-    const scraper = new ShoppingScraper();
+    const backgroundAgents = new BackgroundAgentsService();
     
-    // Scrape and filter deals
-    const result = await scraper.scrapeAllBrands(filters);
+    // Use Background Agents to scrape and save to Notion
+    const deals = await backgroundAgents.scrapeAndSaveToNotion(filters);
     
     return NextResponse.json({
       success: true,
-      data: result,
+      data: {
+        deals: deals,
+        totalFound: deals.length,
+        errors: [],
+      },
     });
   } catch (error) {
-    console.error('Scraping API error:', error);
+    console.error('Background Agent API error:', error);
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to scrape deals' 
+        error: 'Failed to scrape deals with Background Agents' 
       },
       { status: 500 }
     );

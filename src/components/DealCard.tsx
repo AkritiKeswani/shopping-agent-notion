@@ -2,12 +2,34 @@
 
 import { Deal } from '@/types';
 import Image from 'next/image';
+import { useState } from 'react';
 
 interface DealCardProps {
   deal: Deal;
+  onSaveToNotion?: (deal: Deal) => Promise<void>;
 }
 
-export default function DealCard({ deal }: DealCardProps) {
+export default function DealCard({ deal, onSaveToNotion }: DealCardProps) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  const handleSaveToNotion = async () => {
+    if (!onSaveToNotion) return;
+    
+    setIsSaving(true);
+    setSaveStatus('saving');
+    
+    try {
+      await onSaveToNotion(deal);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000); // Reset after 2 seconds
+    } catch (error) {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000); // Reset after 3 seconds
+    } finally {
+      setIsSaving(false);
+    }
+  };
   const getBrandColor = (brand: string) => {
     switch (brand) {
       case 'aritzia':
@@ -93,14 +115,35 @@ export default function DealCard({ deal }: DealCardProps) {
           </span>
         </div>
 
-        <a
-          href={deal.productUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full bg-white text-black hover:bg-gray-100 text-center py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105"
-        >
-          View Product
-        </a>
+        <div className="space-y-3">
+          <a
+            href={deal.productUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full bg-white text-black hover:bg-gray-100 text-center py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105"
+          >
+            View Product
+          </a>
+          
+          {onSaveToNotion && (
+            <button
+              onClick={handleSaveToNotion}
+              disabled={isSaving}
+              className={`w-full py-2 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed ${
+                saveStatus === 'saved' 
+                  ? 'bg-green-500 text-white' 
+                  : saveStatus === 'error'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              {saveStatus === 'saving' && 'Saving...'}
+              {saveStatus === 'saved' && '✅ Saved!'}
+              {saveStatus === 'error' && '❌ Error'}
+              {saveStatus === 'idle' && 'Save to Notion'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

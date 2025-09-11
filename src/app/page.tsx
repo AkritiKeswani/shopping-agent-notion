@@ -41,37 +41,8 @@ export default function Home() {
           setError(`Some errors occurred: ${scrapeData.data.errors.join(', ')}`);
         }
 
-        // Step 2: Save to Notion if we have deals
-        if (scrapeData.data.deals.length > 0) {
-          console.log('💾 Saving to Notion...');
-          setNotionStatus('Saving to Notion...');
-          
-          const notionResponse = await fetch('/api/notion', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ deals: scrapeData.data.deals }),
-          });
-
-          const notionData = await notionResponse.json();
-          
-          if (notionData.success) {
-            console.log(`✅ Saved ${notionData.data.successful} deals to Notion`);
-            setNotionStatus(`✅ ${notionData.data.successful} deals saved to Notion`);
-            // Update error message to show Notion success
-            if (scrapeData.data.errors.length > 0) {
-              setError(`Scraping errors: ${scrapeData.data.errors.join(', ')}. But ${notionData.data.successful} deals saved to Notion successfully.`);
-            } else {
-              setError(null); // Clear any previous errors
-            }
-          } else {
-            setNotionStatus(`❌ Notion save failed: ${notionData.error}`);
-            setError(`Scraping successful but Notion save failed: ${notionData.error}`);
-          }
-        } else {
-          setNotionStatus('No deals to save to Notion');
-        }
+        // Clear any previous Notion status
+        setNotionStatus(null);
       } else {
         setError(scrapeData.error || 'Failed to fetch deals');
       }
@@ -111,6 +82,30 @@ export default function Home() {
       setError('Failed to save to Notion');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleIndividualSave = async (deal: Deal): Promise<void> => {
+    try {
+      const response = await fetch('/api/notion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ deals: [deal] }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log(`✅ Saved ${deal.title} to Notion`);
+      } else {
+        console.error(`❌ Failed to save ${deal.title}: ${data.error}`);
+        throw new Error(data.error || 'Failed to save to Notion');
+      }
+    } catch (err) {
+      console.error('Individual save error:', err);
+      throw err;
     }
   };
 
@@ -207,7 +202,11 @@ export default function Home() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {deals.map((deal) => (
-                  <DealCard key={deal.id} deal={deal} />
+                  <DealCard 
+                    key={deal.id} 
+                    deal={deal} 
+                    onSaveToNotion={handleIndividualSave}
+                  />
                 ))}
               </div>
             </div>

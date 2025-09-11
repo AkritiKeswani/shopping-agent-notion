@@ -48,7 +48,6 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
     clothingType: '',
     size: '',
     maxPrice: undefined,
-    minDiscount: undefined,
     brands: [],
   });
 

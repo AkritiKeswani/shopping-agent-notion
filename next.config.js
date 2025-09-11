@@ -9,7 +9,8 @@ const nextConfig = {
       'images.aritzia.com',
       'images.thereformation.com',
       'images.freepeople.com',
-      'via.placeholder.com'
+      'via.placeholder.com',
+      'picsum.photos'
     ],
   },
 }
