@@ -1,20 +1,20 @@
-import { SimpleScraper } from './simple-scraper';
+import { HttpScraper } from './http-scraper';
 import { Deal, ScrapingResult, SearchFilters } from '@/types';
 
 export class ShoppingScraper {
-  private simpleScraper: SimpleScraper;
+  private httpScraper: HttpScraper;
 
   constructor() {
-    this.simpleScraper = new SimpleScraper();
+    this.httpScraper = new HttpScraper();
   }
 
   async scrapeAllBrands(filters: SearchFilters): Promise<ScrapingResult> {
     try {
-      console.log('🔍 Starting simple scraping...');
+      console.log('🔍 Starting HTTP scraping...');
       
-      // Scrape main pages for best sellers
-      const result = await this.simpleScraper.scrapeAllBrands(filters);
-      console.log(`📊 Found ${result.deals.length} deals from main pages`);
+      // Use HTTP scraper instead of Stagehand
+      const result = await this.httpScraper.scrapeAllBrands(filters);
+      console.log(`📊 Found ${result.deals.length} deals from HTTP scraping`);
       
       // Simple filtering - just basic criteria
       const filteredDeals = this.filterProducts(result.deals, filters);
@@ -33,8 +33,6 @@ export class ShoppingScraper {
         totalFound: 0,
         errors: [`Scraping failed: ${error}`],
       };
-    } finally {
-      // Cleanup handled internally by SimpleScraper
     }
   }
 
