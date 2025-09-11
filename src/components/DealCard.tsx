@@ -11,13 +11,13 @@ export default function DealCard({ deal }: DealCardProps) {
   const getBrandColor = (brand: string) => {
     switch (brand) {
       case 'aritzia':
-        return 'bg-pink-100 text-pink-800';
+        return 'bg-white/20 text-white border-white/30';
       case 'reformation':
-        return 'bg-green-100 text-green-800';
+        return 'bg-white/20 text-white border-white/30';
       case 'free-people':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-white/20 text-white border-white/30';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-white/20 text-white border-white/30';
     }
   };
 
@@ -35,58 +35,59 @@ export default function DealCard({ deal }: DealCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-300 border border-white/10 hover:border-white/20 group">
       {deal.imageUrl && (
-        <div className="relative h-64 w-full">
+        <div className="relative h-64 w-full overflow-hidden">
           <Image
             src={deal.imageUrl}
             alt={deal.title}
             fill
-            className="object-cover"
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
             }}
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
         </div>
       )}
       
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getBrandColor(deal.brand)}`}>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-3">
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getBrandColor(deal.brand)}`}>
             {getBrandName(deal.brand)}
           </span>
-          <span className="text-xs text-gray-500 capitalize">
+          <span className="text-xs text-gray-400 capitalize font-medium">
             {deal.clothingType}
           </span>
         </div>
 
-        <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+        <h3 className="font-semibold text-white mb-3 line-clamp-2 text-lg">
           {deal.title}
         </h3>
 
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <span className="text-lg font-bold text-gray-900">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <span className="text-2xl font-bold text-white">
               ${deal.salePrice}
             </span>
             {deal.originalPrice > deal.salePrice && (
-              <span className="text-sm text-gray-500 line-through">
+              <span className="text-sm text-gray-400 line-through">
                 ${deal.originalPrice}
               </span>
             )}
           </div>
-          {deal.discount > 0 && (
-            <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
-              -{deal.discount}%
+          {deal.originalPrice > deal.salePrice && (
+            <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-lg border border-green-500/30">
+              SALE
             </span>
           )}
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-          <span>Size: {deal.size}</span>
-          <span className={`px-2 py-1 rounded text-xs ${
-            deal.inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        <div className="flex items-center justify-between text-sm text-gray-300 mb-4">
+          <span className="font-medium">Size: {deal.size}</span>
+          <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${
+            deal.inStock ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
           }`}>
             {deal.inStock ? 'In Stock' : 'Out of Stock'}
           </span>
@@ -96,7 +97,7 @@ export default function DealCard({ deal }: DealCardProps) {
           href={deal.productUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded font-medium transition-colors"
+          className="block w-full bg-white text-black hover:bg-gray-100 text-center py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105"
         >
           View Product
         </a>

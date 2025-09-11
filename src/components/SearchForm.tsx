@@ -67,17 +67,17 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+      <form onSubmit={handleSubmit} className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
               Clothing Type
             </label>
             <select
               value={filters.clothingType || ''}
               onChange={(e) => setFilters(prev => ({ ...prev, clothingType: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 bg-white"
             >
               {CLOTHING_TYPES.map(type => (
                 <option key={type.value} value={type.value}>
@@ -88,13 +88,13 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
               Size
             </label>
             <select
               value={filters.size || ''}
               onChange={(e) => setFilters(prev => ({ ...prev, size: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 bg-white"
             >
               {SIZES.map(size => (
                 <option key={size.value} value={size.value}>
@@ -105,7 +105,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
               Max Price ($)
             </label>
             <input
@@ -115,7 +115,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
                 ...prev, 
                 maxPrice: e.target.value ? Number(e.target.value) : undefined 
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 bg-white"
               placeholder="No limit"
             />
           </div>
@@ -123,19 +123,19 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-gray-800 mb-4">
             Brands
           </label>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-4">
             {BRANDS.map(brand => (
-              <label key={brand.value} className="flex items-center">
+              <label key={brand.value} className="flex items-center cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={filters.brands?.includes(brand.value) || false}
                   onChange={() => handleBrandChange(brand.value)}
-                  className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="mr-3 h-5 w-5 text-black focus:ring-black border-gray-300 rounded transition-all duration-200"
                 />
-                <span className="text-sm text-gray-700">{brand.label}</span>
+                <span className="text-sm font-medium text-gray-800 group-hover:text-black transition-colors duration-200">{brand.label}</span>
               </label>
             ))}
           </div>
@@ -144,7 +144,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white py-3 px-4 rounded-md font-medium transition-colors"
+          className="w-full bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
         >
           {loading ? 'Searching...' : 'Find Deals'}
         </button>

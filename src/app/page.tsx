@@ -114,66 +114,104 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Shopping Agent
-          </h1>
-          <p className="text-lg text-gray-600 mb-4">
-            Find the best deals from Aritzia, Reformation, and Free People
-          </p>
-          <div className="flex justify-center space-x-4">
-            <a
-              href="/agents"
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              Manage Background Agents
-            </a>
+    <div className="min-h-screen bg-black text-white">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800"></div>
+        <div className="relative container mx-auto px-6 py-20">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              Shopping Agent
+            </h1>
+            <p className="text-xl text-gray-300 mb-8 font-light">
+              AI-powered deal discovery from Aritzia, Reformation, and Free People
+            </p>
+            <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-8">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
+              <span className="text-sm font-medium">Auto-saves to Notion</span>
+            </div>
+            <div className="flex justify-center space-x-4">
+              <a
+                href="/agents"
+                className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20"
+              >
+                Manage Background Agents
+              </a>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="max-w-4xl mx-auto">
-          <SearchForm onSearch={handleSearch} loading={loading} />
-          
+      {/* Search Section */}
+      <div className="bg-white text-black py-16">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Find Your Perfect Deals</h2>
+              <p className="text-gray-600">Search by clothing type, size, and brand preferences</p>
+            </div>
+            
+            <SearchForm onSearch={handleSearch} loading={loading} />
+          </div>
+        </div>
+      </div>
+
+      {/* Results Section */}
+      <div className="bg-black py-16">
+        <div className="container mx-auto px-6">
           {error && (
-            <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
+            <div className="max-w-4xl mx-auto mb-8">
+              <div className="bg-red-900/20 border border-red-500/30 text-red-300 px-6 py-4 rounded-xl backdrop-blur-sm">
+                <div className="flex items-center">
+                  <div className="w-5 h-5 mr-3">⚠️</div>
+                  <span className="font-medium">{error}</span>
+                </div>
+              </div>
             </div>
           )}
 
-          {loading && <LoadingSpinner />}
+          {loading && (
+            <div className="max-w-4xl mx-auto">
+              <LoadingSpinner />
+            </div>
+          )}
 
           {deals.length > 0 && (
-            <div className="mt-8">
-              <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl font-semibold text-gray-900">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h2 className="text-3xl font-bold text-white mb-2">
                     Found {deals.length} deals
                   </h2>
-                  <button
-                    onClick={handleManualNotionSave}
-                    disabled={loading}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    {loading ? 'Saving...' : 'Add to Notion'}
-                  </button>
+                  <p className="text-gray-400">Curated just for you</p>
                 </div>
-                
-                {notionStatus && (
-                  <div className={`text-sm p-3 rounded-lg ${
-                    notionStatus.includes('✅') 
-                      ? 'bg-green-100 text-green-800' 
-                      : notionStatus.includes('❌')
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {notionStatus}
-                  </div>
-                )}
+                <button
+                  onClick={handleManualNotionSave}
+                  disabled={loading}
+                  className="bg-white text-black hover:bg-gray-100 disabled:bg-gray-600 disabled:text-gray-400 px-6 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 disabled:transform-none"
+                >
+                  {loading ? 'Saving...' : 'Add to Notion'}
+                </button>
               </div>
+              
+              {notionStatus && (
+                <div className={`mb-8 p-4 rounded-xl backdrop-blur-sm border ${
+                  notionStatus.includes('✅') 
+                    ? 'bg-green-900/20 border-green-500/30 text-green-300' 
+                    : notionStatus.includes('❌')
+                    ? 'bg-red-900/20 border-red-500/30 text-red-300'
+                    : 'bg-blue-900/20 border-blue-500/30 text-blue-300'
+                }`}>
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 mr-3">
+                      {notionStatus.includes('✅') ? '✅' : notionStatus.includes('❌') ? '❌' : '⏳'}
+                    </div>
+                    <span className="font-medium">{notionStatus}</span>
+                  </div>
+                </div>
+              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {deals.map((deal) => (
                   <DealCard key={deal.id} deal={deal} />
                 ))}
