@@ -9,6 +9,7 @@ const ProductSchema = z.object({
   imageUrl: z.string(),
   productUrl: z.string(),
   size: z.string().optional(),
+  sizes: z.array(z.string()).optional(),
   inStock: z.boolean(),
 });
 
@@ -58,34 +59,43 @@ export class StagehandScraper {
     const allDeals: Deal[] = [];
 
     try {
-      const [aritziaDeals, reformationDeals, freePeopleDeals] = await Promise.allSettled([
-        this.scrapeAritzia(filters),
-        this.scrapeReformation(filters),
-        this.scrapeFreePeople(filters),
-      ]);
+      console.log('🔍 Starting scraping with filters:', filters);
+      
+      // Determine which brands to scrape based on filters
+      const brandsToScrape = this.getBrandsToScrape(filters);
+      console.log('🎯 Brands to scrape:', brandsToScrape);
 
-      if (aritziaDeals.status === 'fulfilled') {
-        allDeals.push(...aritziaDeals.value);
-      } else {
-        errors.push(`Aritzia scraping failed: ${aritziaDeals.reason}`);
+      const scrapePromises = [];
+      
+      if (brandsToScrape.includes('aritzia')) {
+        scrapePromises.push(this.scrapeAritzia(filters));
+      }
+      if (brandsToScrape.includes('reformation')) {
+        scrapePromises.push(this.scrapeReformation(filters));
+      }
+      if (brandsToScrape.includes('free-people')) {
+        scrapePromises.push(this.scrapeFreePeople(filters));
       }
 
-      if (reformationDeals.status === 'fulfilled') {
-        allDeals.push(...reformationDeals.value);
-      } else {
-        errors.push(`Reformation scraping failed: ${reformationDeals.reason}`);
-      }
+      const results = await Promise.allSettled(scrapePromises);
 
-      if (freePeopleDeals.status === 'fulfilled') {
-        allDeals.push(...freePeopleDeals.value);
-      } else {
-        errors.push(`Free People scraping failed: ${freePeopleDeals.reason}`);
-      }
+      results.forEach((result, index) => {
+        const brandName = brandsToScrape[index];
+        if (result.status === 'fulfilled') {
+          const filteredDeals = this.filterDeals(result.value, filters);
+          allDeals.push(...filteredDeals);
+          console.log(`✅ ${brandName}: Found ${filteredDeals.length} deals after filtering`);
+        } else {
+          errors.push(`${brandName} scraping failed: ${result.reason}`);
+          console.log(`❌ ${brandName} failed: ${result.reason}`);
+        }
+      });
 
     } catch (error) {
       errors.push(`General scraping error: ${error}`);
     }
 
+    console.log(`🎯 Total deals found after filtering: ${allDeals.length}`);
     return {
       deals: allDeals,
       totalFound: allDeals.length,
@@ -127,8 +137,12 @@ export class StagehandScraper {
       await page.waitForTimeout(3000);
 
       // Use Stagehand's AI to find and extract products
+      const clothingTypeFilter = filters.clothingType ? ` Focus on finding ${filters.clothingType} items specifically.` : '';
+      const sizeFilter = filters.size ? ` Look for items available in size ${filters.size}.` : '';
+      const priceFilter = filters.maxPrice ? ` Only include items with sale price under $${filters.maxPrice}.` : '';
+      
       const products = await page.extract({
-        instruction: `Look for any product items on this Aritzia sale page. Find products that are on sale with reduced prices. For each product you find, extract the title, original price, sale price, image URL, and product URL. If there's only one price shown, use it as both original and sale price. Look for any product containers, cards, or tiles on the page.`,
+        instruction: `Look for clothing products on this Aritzia sale page. Find products that are on sale with reduced prices.${clothingTypeFilter}${sizeFilter}${priceFilter} For each product you find, extract the title, original price, sale price, image URL, product URL, and available sizes. If there's only one price shown, use it as both original and sale price. Look for any product containers, cards, or tiles on the page.`,
         schema: z.object({
           products: z.array(ProductSchema),
         }),
@@ -177,8 +191,12 @@ export class StagehandScraper {
 
       await page.waitForTimeout(3000);
 
+      const clothingTypeFilter = filters.clothingType ? ` Focus on finding ${filters.clothingType} items specifically.` : '';
+      const sizeFilter = filters.size ? ` Look for items available in size ${filters.size}.` : '';
+      const priceFilter = filters.maxPrice ? ` Only include items with sale price under $${filters.maxPrice}.` : '';
+      
       const products = await page.extract({
-        instruction: `Look for any product items on this Reformation sale page. Find products that are on sale with reduced prices. For each product you find, extract the title, original price, sale price, image URL, and product URL. Look for any product containers, cards, or tiles on the page.`,
+        instruction: `Look for clothing products on this Reformation sale page. Find products that are on sale with reduced prices.${clothingTypeFilter}${sizeFilter}${priceFilter} For each product you find, extract the title, original price, sale price, image URL, product URL, and available sizes. Look for any product containers, cards, or tiles on the page.`,
         schema: z.object({
           products: z.array(ProductSchema),
         }),
@@ -226,8 +244,12 @@ export class StagehandScraper {
 
       await page.waitForTimeout(3000);
 
+      const clothingTypeFilter = filters.clothingType ? ` Focus on finding ${filters.clothingType} items specifically.` : '';
+      const sizeFilter = filters.size ? ` Look for items available in size ${filters.size}.` : '';
+      const priceFilter = filters.maxPrice ? ` Only include items with sale price under $${filters.maxPrice}.` : '';
+      
       const products = await page.extract({
-        instruction: `Look for any product items on this Free People sale page. Find products that are on sale with reduced prices. For each product you find, extract the title, original price, sale price, image URL, and product URL. Look for any product containers, cards, or tiles on the page.`,
+        instruction: `Look for clothing products on this Free People sale page. Find products that are on sale with reduced prices.${clothingTypeFilter}${sizeFilter}${priceFilter} For each product you find, extract the title, original price, sale price, image URL, product URL, and available sizes. Look for any product containers, cards, or tiles on the page.`,
         schema: z.object({
           products: z.array(ProductSchema),
         }),
@@ -245,19 +267,72 @@ export class StagehandScraper {
   }
 
   private parseBrandResults(products: any[], brand: 'aritzia' | 'reformation' | 'free-people'): Deal[] {
-    return products.map((product, index) => ({
-      id: `${brand}-${index}-${Date.now()}`,
-      title: product.title || 'Unknown Product',
-      brand,
-      originalPrice: product.originalPrice || 0,
-      salePrice: product.salePrice || 0,
-      size: product.size || 'One Size',
-      clothingType: this.mapClothingType(product.category || 'top'),
-      imageUrl: product.imageUrl || '',
-      productUrl: product.productUrl || '',
-      inStock: product.inStock !== false,
-      scrapedAt: new Date(),
-    }));
+    return products.map((product, index) => {
+      // Determine the best size to use
+      let bestSize = 'One Size';
+      if (product.size) {
+        bestSize = product.size;
+      } else if (product.sizes && product.sizes.length > 0) {
+        bestSize = product.sizes[0]; // Use first available size
+      }
+
+      return {
+        id: `${brand}-${index}-${Date.now()}`,
+        title: product.title || 'Unknown Product',
+        brand,
+        originalPrice: product.originalPrice || 0,
+        salePrice: product.salePrice || 0,
+        size: bestSize,
+        clothingType: this.mapClothingType(product.category || product.title || 'top'),
+        imageUrl: product.imageUrl || '',
+        productUrl: product.productUrl || '',
+        inStock: product.inStock !== false,
+        scrapedAt: new Date(),
+      };
+    });
+  }
+
+  private getBrandsToScrape(filters: SearchFilters): string[] {
+    // If no brand filter specified, scrape all brands
+    if (!filters.brands || filters.brands.length === 0) {
+      return ['aritzia', 'reformation', 'free-people'];
+    }
+    
+    // Return only the selected brands
+    return filters.brands;
+  }
+
+  private filterDeals(deals: Deal[], filters: SearchFilters): Deal[] {
+    console.log(`🔍 Filtering ${deals.length} deals with filters:`, filters);
+    
+    return deals.filter(deal => {
+      // Size filter - be more lenient with matching
+      if (filters.size && deal.size) {
+        const dealSize = deal.size.toLowerCase().trim();
+        const filterSize = filters.size.toLowerCase().trim();
+        
+        // Check for exact match or if the deal size contains the filter size
+        if (!dealSize.includes(filterSize) && !filterSize.includes(dealSize)) {
+          console.log(`❌ Filtered out ${deal.title} - size mismatch: ${deal.size} vs ${filters.size}`);
+          return false;
+        }
+      }
+      
+      // Price filter
+      if (filters.maxPrice && deal.salePrice > filters.maxPrice) {
+        console.log(`❌ Filtered out ${deal.title} - price too high: ${deal.salePrice} > ${filters.maxPrice}`);
+        return false;
+      }
+      
+      // Clothing type filter - be more lenient
+      if (filters.clothingType && deal.clothingType && deal.clothingType !== filters.clothingType) {
+        console.log(`❌ Filtered out ${deal.title} - type mismatch: ${deal.clothingType} vs ${filters.clothingType}`);
+        return false;
+      }
+      
+      console.log(`✅ Keeping ${deal.title} (${deal.brand}, ${deal.clothingType}, ${deal.size}, $${deal.salePrice})`);
+      return true;
+    });
   }
 
   private mapClothingType(category: string): 'jeans' | 'shirt' | 'dress' | 'top' | 'bottom' | 'outerwear' | 'accessories' {

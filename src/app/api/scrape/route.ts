@@ -6,23 +6,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const filters: SearchFilters = body.filters || {};
-    const userPreferences = body.userPreferences || '';
+    console.log('🚀 Starting scraping with filters:', filters);
 
     const scraper = new ShoppingScraper();
     
-    try {
-      console.log('🚀 Starting scraping...');
-      
-      // Scrape and optimize deals
-      const result = await scraper.scrapeAllBrands(filters, userPreferences);
-      
-      return NextResponse.json({
-        success: true,
-        data: result,
-      });
-    } finally {
-      // Cleanup is handled by SimpleScraper internally
-    }
+    // Scrape and filter deals
+    const result = await scraper.scrapeAllBrands(filters);
+    
+    return NextResponse.json({
+      success: true,
+      data: result,
+    });
   } catch (error) {
     console.error('Scraping API error:', error);
     return NextResponse.json(
