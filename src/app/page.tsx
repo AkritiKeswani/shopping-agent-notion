@@ -13,6 +13,7 @@ export default function Home() {
   const [notionStatus, setNotionStatus] = useState<string | null>(null);
 
   const handleSearch = async (filters: SearchFilters) => {
+    console.log('🚀 handleSearch called with filters:', filters);
     setLoading(true);
     setError(null);
     setDeals([]);
@@ -30,6 +31,7 @@ export default function Home() {
       });
 
       const scrapeData = await scrapeResponse.json();
+      console.log('📡 Scrape response:', scrapeData);
 
       if (scrapeData.success) {
         console.log(`📊 Found ${scrapeData.data.deals.length} deals`);
@@ -151,6 +153,13 @@ export default function Home() {
       {/* Results Section */}
       <div className="bg-black py-16">
         <div className="container mx-auto px-6">
+          {/* Debug info */}
+          <div className="mb-4 p-4 bg-yellow-900/20 border border-yellow-500/30 text-yellow-300 rounded-xl">
+            <p>Debug: deals.length = {deals.length}</p>
+            <p>Debug: loading = {loading.toString()}</p>
+            <p>Debug: error = {error || 'null'}</p>
+          </div>
+
           {error && (
             <div className="max-w-4xl mx-auto mb-8">
               <div className="bg-red-900/20 border border-red-500/30 text-red-300 px-6 py-4 rounded-xl backdrop-blur-sm">

@@ -54,6 +54,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔍 SearchForm handleSubmit called with filters:', filters);
     onSearch(filters);
   };
 
