@@ -8,7 +8,8 @@ const nextConfig = {
       'cdn.shopify.com',
       'images.aritzia.com',
       'images.thereformation.com',
-      'images.freepeople.com'
+      'images.freepeople.com',
+      'via.placeholder.com'
     ],
   },
 }

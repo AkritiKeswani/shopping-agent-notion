@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       'Wanted Size': '', // Will be filled by user selection
       URL: deal.productUrl,
       'Image URL': deal.imageUrl,
-      'Session URL': '', // Will be filled with Browserbase session URL
+      'Session URL': null, // Set to null instead of empty string
       Selected: false,
       Month: new Date().toLocaleString('default', { month: 'long' }),
     }));
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
           'Wanted Size': { rich_text: [{ text: { content: deal['Wanted Size'] } }] },
           URL: { url: deal.URL },
           'Image URL': { url: deal['Image URL'] },
-          'Session URL': { url: deal['Session URL'] },
+          'Session URL': deal['Session URL'] ? { url: deal['Session URL'] } : { url: null },
           Selected: { checkbox: deal.Selected },
           Month: { select: { name: deal.Month } },
         },
