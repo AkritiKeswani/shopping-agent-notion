@@ -130,14 +130,6 @@ export default function Home() {
               <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
               <span className="text-sm font-medium">Auto-saves to Notion</span>
             </div>
-            <div className="flex justify-center space-x-4">
-              <a
-                href="/agents"
-                className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20"
-              >
-                Manage Background Agents
-              </a>
-            </div>
           </div>
         </div>
       </div>
