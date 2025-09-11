@@ -26,14 +26,14 @@ export interface ScrapingResult {
 }
 
 export interface NotionDeal {
-  Title: string;
+  Name: string;
   Brand: string;
-  'Original Price': number;
-  'Sale Price': number;
-  Size: string;
-  'Clothing Type': string;
+  Price: number;
+  Sizes: string;
+  'Wanted Size': string;
+  URL: string;
   'Image URL': string;
-  'Product URL': string;
-  'In Stock': boolean;
-  'Scraped At': string;
+  'Session URL': string;
+  Selected: boolean;
+  Month: string;
 }

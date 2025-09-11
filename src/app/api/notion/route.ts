@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notion } from '@/lib/notion';
+import { BackgroundAgentsService } from '@/lib/background-agents';
 import { Deal, NotionDeal } from '@/types';
 
 export async function POST(request: NextRequest) {
@@ -15,16 +16,16 @@ export async function POST(request: NextRequest) {
     }
 
     const notionDeals: NotionDeal[] = deals.map(deal => ({
-      Title: deal.title,
+      Name: deal.title,
       Brand: deal.brand,
-      'Original Price': deal.originalPrice,
-      'Sale Price': deal.salePrice,
-      Size: deal.size,
-      'Clothing Type': deal.clothingType,
+      Price: deal.salePrice,
+      Sizes: deal.size,
+      'Wanted Size': '', // Will be filled by user selection
+      URL: deal.productUrl,
       'Image URL': deal.imageUrl,
-      'Product URL': deal.productUrl,
-      'In Stock': deal.inStock,
-      'Scraped At': deal.scrapedAt.toISOString(),
+      'Session URL': '', // Will be filled with Browserbase session URL
+      Selected: false,
+      Month: new Date().toLocaleString('default', { month: 'long' }),
     }));
 
     // Create pages in Notion database
@@ -32,16 +33,16 @@ export async function POST(request: NextRequest) {
       notion.pages.create({
         parent: { database_id: process.env.NOTION_DATABASE_ID! },
         properties: {
-          Title: { title: [{ text: { content: deal.Title } }] },
+          Name: { title: [{ text: { content: deal.Name } }] },
           Brand: { select: { name: deal.Brand } },
-          'Original Price': { number: deal['Original Price'] },
-          'Sale Price': { number: deal['Sale Price'] },
-          Size: { rich_text: [{ text: { content: deal.Size } }] },
-          'Clothing Type': { select: { name: deal['Clothing Type'] } },
+          Price: { number: deal.Price },
+          Sizes: { rich_text: [{ text: { content: deal.Sizes } }] },
+          'Wanted Size': { rich_text: [{ text: { content: deal['Wanted Size'] } }] },
+          URL: { url: deal.URL },
           'Image URL': { url: deal['Image URL'] },
-          'Product URL': { url: deal['Product URL'] },
-          'In Stock': { checkbox: deal['In Stock'] },
-          'Scraped At': { date: { start: deal['Scraped At'] } },
+          'Session URL': { url: deal['Session URL'] },
+          Selected: { checkbox: deal.Selected },
+          Month: { select: { name: deal.Month } },
         },
       })
     );
@@ -85,16 +86,16 @@ export async function GET() {
         const props = page.properties;
         return {
           id: page.id,
-          title: props.Title?.title?.[0]?.text?.content || '',
+          title: props.Name?.title?.[0]?.text?.content || '',
           brand: props.Brand?.select?.name || '',
-          originalPrice: props['Original Price']?.number || 0,
-          salePrice: props['Sale Price']?.number || 0,
-          size: props.Size?.rich_text?.[0]?.text?.content || '',
-          clothingType: props['Clothing Type']?.select?.name || '',
+          price: props.Price?.number || 0,
+          sizes: props.Sizes?.rich_text?.[0]?.text?.content || '',
+          wantedSize: props['Wanted Size']?.rich_text?.[0]?.text?.content || '',
+          url: props.URL?.url || '',
           imageUrl: props['Image URL']?.url || '',
-          productUrl: props['Product URL']?.url || '',
-          inStock: props['In Stock']?.checkbox || false,
-          scrapedAt: props['Scraped At']?.date?.start || '',
+          sessionUrl: props['Session URL']?.url || '',
+          selected: props.Selected?.checkbox || false,
+          month: props.Month?.select?.name || '',
         };
       });
 

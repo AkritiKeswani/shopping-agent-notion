@@ -1,23 +1,45 @@
-import { StagehandScraper } from './stagehand-scraper';
+import { SimpleScraper } from './simple-scraper';
+import { AIOptimizer } from './ai-optimizer';
 import { Deal, ScrapingResult, SearchFilters } from '@/types';
 
 export class ShoppingScraper {
-  private stagehandScraper: StagehandScraper;
+  private simpleScraper: SimpleScraper;
+  private aiOptimizer: AIOptimizer;
 
   constructor() {
-    this.stagehandScraper = new StagehandScraper();
+    this.simpleScraper = new SimpleScraper();
+    this.aiOptimizer = new AIOptimizer();
   }
 
-  async scrapeAllBrands(filters: SearchFilters): Promise<ScrapingResult> {
+  async scrapeAllBrands(filters: SearchFilters, userPreferences?: string): Promise<ScrapingResult> {
     try {
-      const result = await this.stagehandScraper.scrapeAllBrands(filters);
+      console.log('🔍 Starting scraping with AI optimization...');
       
-      // Apply additional filtering
+      // First, scrape all deals
+      const result = await this.simpleScraper.scrapeAllBrands(filters);
+      console.log(`📊 Found ${result.deals.length} raw deals`);
+      
+      if (result.deals.length === 0) {
+        return {
+          deals: [],
+          totalFound: 0,
+          errors: result.errors,
+        };
+      }
+      
+      // Apply basic filtering first
       const filteredDeals = this.filterProducts(result.deals, filters);
+      console.log(`🎯 After filtering: ${filteredDeals.length} deals`);
+      
+      // Use AI to optimize and select the best deals
+      console.log('🤖 AI optimizing deals...');
+      const optimization = await this.aiOptimizer.optimizeDeals(filteredDeals, filters, userPreferences);
+      console.log(`✨ AI selected ${optimization.optimizedDeals.length} optimal deals`);
+      console.log(`💭 AI reasoning: ${optimization.reasoning}`);
       
       return {
-        deals: filteredDeals,
-        totalFound: filteredDeals.length,
+        deals: optimization.optimizedDeals,
+        totalFound: optimization.optimizedDeals.length,
         errors: result.errors,
       };
       
@@ -29,7 +51,7 @@ export class ShoppingScraper {
         errors: [`Scraping failed: ${error}`],
       };
     } finally {
-      // Cleanup is handled by StagehandScraper internally
+      await this.simpleScraper.cleanup();
     }
   }
 
