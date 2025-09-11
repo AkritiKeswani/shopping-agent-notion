@@ -34,7 +34,7 @@ export class ShoppingScraper {
         errors: [`Scraping failed: ${error}`],
       };
     } finally {
-      await this.simpleScraper.cleanup();
+      // Cleanup handled internally by SimpleScraper
     }
   }
 

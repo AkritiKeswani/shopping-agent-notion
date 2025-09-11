@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notion } from '@/lib/notion';
-import { BackgroundAgentsService } from '@/lib/background-agents';
 import { Deal, NotionDeal } from '@/types';
 
 export async function POST(request: NextRequest) {

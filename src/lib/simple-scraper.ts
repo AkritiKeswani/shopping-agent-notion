@@ -37,23 +37,19 @@ export class SimpleScraper {
   }
 
   async scrapeAllBrands(filters: SearchFilters): Promise<ScrapingResult> {
-    if (!this.stagehand) {
-      await this.initialize();
-    }
-
+    // For now, return mock data to get frontend working
+    console.log('🎭 Using mock data for demo...');
+    
     const errors: string[] = [];
     const allDeals: Deal[] = [];
 
     try {
-      // Try each brand one by one to avoid conflicts
-      const aritziaDeals = await this.scrapeAritzia(filters);
-      allDeals.push(...aritziaDeals);
+      // Return mock deals for all brands
+      const aritziaDeals = this.getMockAritziaDeals();
+      const reformationDeals = this.getMockReformationDeals();
+      const freePeopleDeals = this.getMockFreePeopleDeals();
       
-      const reformationDeals = await this.scrapeReformation(filters);
-      allDeals.push(...reformationDeals);
-      
-      const freePeopleDeals = await this.scrapeFreePeople(filters);
-      allDeals.push(...freePeopleDeals);
+      allDeals.push(...aritziaDeals, ...reformationDeals, ...freePeopleDeals);
 
     } catch (error) {
       errors.push(`General scraping error: ${error}`);
@@ -202,5 +198,98 @@ export class SimpleScraper {
     if (lowerCategory.includes('bag') || lowerCategory.includes('shoe') || lowerCategory.includes('jewelry')) return 'accessories';
     
     return 'top';
+  }
+
+  private getMockAritziaDeals(): Deal[] {
+    return [
+      {
+        id: 'aritzia-mock-1',
+        title: 'Wilfred Free Babaton T-Shirt',
+        brand: 'aritzia',
+        originalPrice: 45,
+        salePrice: 25,
+        size: 'M',
+        clothingType: 'top',
+        imageUrl: 'https://via.placeholder.com/300x400?text=Aritzia+Top',
+        productUrl: 'https://www.aritzia.com/us/en/sale',
+        inStock: true,
+        scrapedAt: new Date(),
+      },
+      {
+        id: 'aritzia-mock-2',
+        title: 'Wilfred Free Denim Jacket',
+        brand: 'aritzia',
+        originalPrice: 98,
+        salePrice: 68,
+        size: 'S',
+        clothingType: 'outerwear',
+        imageUrl: 'https://via.placeholder.com/300x400?text=Aritzia+Jacket',
+        productUrl: 'https://www.aritzia.com/us/en/sale',
+        inStock: true,
+        scrapedAt: new Date(),
+      },
+    ];
+  }
+
+  private getMockReformationDeals(): Deal[] {
+    return [
+      {
+        id: 'reformation-mock-1',
+        title: 'Reformation Floral Dress',
+        brand: 'reformation',
+        originalPrice: 128,
+        salePrice: 78,
+        size: 'S',
+        clothingType: 'dress',
+        imageUrl: 'https://via.placeholder.com/300x400?text=Reformation+Dress',
+        productUrl: 'https://www.thereformation.com/collections/sale',
+        inStock: true,
+        scrapedAt: new Date(),
+      },
+      {
+        id: 'reformation-mock-2',
+        title: 'Reformation Silk Blouse',
+        brand: 'reformation',
+        originalPrice: 88,
+        salePrice: 58,
+        size: 'M',
+        clothingType: 'shirt',
+        imageUrl: 'https://via.placeholder.com/300x400?text=Reformation+Blouse',
+        productUrl: 'https://www.thereformation.com/collections/sale',
+        inStock: true,
+        scrapedAt: new Date(),
+      },
+    ];
+  }
+
+  private getMockFreePeopleDeals(): Deal[] {
+    return [
+      {
+        id: 'freepeople-mock-1',
+        title: 'Free People Boho Top',
+        brand: 'free-people',
+        originalPrice: 78,
+        salePrice: 48,
+        size: 'M',
+        clothingType: 'top',
+        imageUrl: 'https://via.placeholder.com/300x400?text=Free+People+Top',
+        productUrl: 'https://www.freepeople.com/sale',
+        inStock: true,
+        scrapedAt: new Date(),
+      },
+      {
+        id: 'freepeople-mock-2',
+        title: 'Free People Vintage Jeans',
+        brand: 'free-people',
+        originalPrice: 98,
+        salePrice: 68,
+        size: 'L',
+        clothingType: 'jeans',
+        imageUrl: 'https://via.placeholder.com/300x400?text=Free+People+Jeans',
+        productUrl: 'https://www.freepeople.com/sale',
+        inStock: true,
+        scrapedAt: new Date(),
+      },
+    ];
   }
 }
