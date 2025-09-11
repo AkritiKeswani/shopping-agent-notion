@@ -41,19 +41,42 @@ export class SimpleScraper {
     const allDeals: Deal[] = [];
 
     try {
-      // Try real scraping first, fallback to mock data
-      console.log('🚀 Attempting real scraping...');
+      console.log('🚀 Starting REAL scraping - no mock data...');
       
       if (!this.stagehand) {
         await this.initialize();
       }
 
-      // Try each brand with timeout and fallback
-      const aritziaDeals = await this.scrapeAritziaWithFallback(filters);
-      const reformationDeals = await this.scrapeReformationWithFallback(filters);
-      const freePeopleDeals = await this.scrapeFreePeopleWithFallback(filters);
-      
-      allDeals.push(...aritziaDeals, ...reformationDeals, ...freePeopleDeals);
+      // Scrape each brand with proper error handling
+      const [aritziaResult, reformationResult, freePeopleResult] = await Promise.allSettled([
+        this.scrapeAritzia(filters),
+        this.scrapeReformation(filters),
+        this.scrapeFreePeople(filters),
+      ]);
+
+      if (aritziaResult.status === 'fulfilled') {
+        allDeals.push(...aritziaResult.value);
+        console.log(`✅ Aritzia: ${aritziaResult.value.length} deals`);
+      } else {
+        errors.push(`Aritzia failed: ${aritziaResult.reason}`);
+        console.log(`❌ Aritzia failed: ${aritziaResult.reason}`);
+      }
+
+      if (reformationResult.status === 'fulfilled') {
+        allDeals.push(...reformationResult.value);
+        console.log(`✅ Reformation: ${reformationResult.value.length} deals`);
+      } else {
+        errors.push(`Reformation failed: ${reformationResult.reason}`);
+        console.log(`❌ Reformation failed: ${reformationResult.reason}`);
+      }
+
+      if (freePeopleResult.status === 'fulfilled') {
+        allDeals.push(...freePeopleResult.value);
+        console.log(`✅ Free People: ${freePeopleResult.value.length} deals`);
+      } else {
+        errors.push(`Free People failed: ${freePeopleResult.reason}`);
+        console.log(`❌ Free People failed: ${freePeopleResult.reason}`);
+      }
 
     } catch (error) {
       errors.push(`General scraping error: ${error}`);
@@ -75,15 +98,12 @@ export class SimpleScraper {
     try {
       console.log('🛍️ Scraping Aritzia...');
       
-      // Try sale page first, fallback to main page
-      try {
-        await page.goto('https://www.aritzia.com/us/en/sale', { waitUntil: 'load', timeout: 15000 });
-        await page.waitForTimeout(2000);
-      } catch (error) {
-        console.log('Sale page failed, trying main page...');
-        await page.goto('https://www.aritzia.com/us/en', { waitUntil: 'load', timeout: 15000 });
-        await page.waitForTimeout(2000);
-      }
+      // Try sale page with better timeout
+      await page.goto('https://www.aritzia.com/us/en/sale', { 
+        waitUntil: 'domcontentloaded', 
+        timeout: 25000 
+      });
+      await page.waitForTimeout(3000);
 
       const products = await page.extract({
         instruction: `Find clothing products on this page. Look for any items with prices. For each product, extract: title, price (if there are two prices, use the higher one as original and lower as sale), image URL, and product URL.`,
@@ -92,25 +112,12 @@ export class SimpleScraper {
         }),
       });
 
-      console.log(`Found ${products.products.length} products from Aritzia`);
       deals.push(...this.parseBrandResults(products.products, 'aritzia'));
+      console.log(`✅ Aritzia: Found ${deals.length} real deals`);
 
     } catch (error) {
-      console.error('Error scraping Aritzia:', error);
-      // Return mock data for demo purposes
-      deals.push({
-        id: 'aritzia-mock-1',
-        title: 'Mock Aritzia Product',
-        brand: 'aritzia',
-        originalPrice: 120,
-        salePrice: 80,
-        size: 'M',
-        clothingType: 'top',
-        imageUrl: 'https://via.placeholder.com/300x400',
-        productUrl: 'https://www.aritzia.com',
-        inStock: true,
-        scrapedAt: new Date(),
-      });
+      console.error('❌ Aritzia scraping failed:', error);
+      throw error; // Don't return mock data
     }
 
     return deals;
@@ -125,7 +132,10 @@ export class SimpleScraper {
     try {
       console.log('🌿 Scraping Reformation main page...');
       
-      await page.goto('https://www.thereformation.com', { waitUntil: 'networkidle' });
+      await page.goto('https://www.thereformation.com', { 
+        waitUntil: 'domcontentloaded', 
+        timeout: 25000 
+      });
       await page.waitForTimeout(3000);
 
       const products = await page.extract({
@@ -135,11 +145,12 @@ export class SimpleScraper {
         }),
       });
 
-      console.log(`Found ${products.products.length} featured products from Reformation`);
       deals.push(...this.parseBrandResults(products.products, 'reformation'));
+      console.log(`✅ Reformation: Found ${deals.length} real deals`);
 
     } catch (error) {
-      console.error('Error scraping Reformation:', error);
+      console.error('❌ Reformation scraping failed:', error);
+      throw error; // Don't return empty array
     }
 
     return deals;
@@ -154,7 +165,10 @@ export class SimpleScraper {
     try {
       console.log('🆓 Scraping Free People main page...');
       
-      await page.goto('https://www.freepeople.com', { waitUntil: 'networkidle' });
+      await page.goto('https://www.freepeople.com', { 
+        waitUntil: 'domcontentloaded', 
+        timeout: 25000 
+      });
       await page.waitForTimeout(3000);
 
       const products = await page.extract({
@@ -164,11 +178,12 @@ export class SimpleScraper {
         }),
       });
 
-      console.log(`Found ${products.products.length} featured products from Free People`);
       deals.push(...this.parseBrandResults(products.products, 'free-people'));
+      console.log(`✅ Free People: Found ${deals.length} real deals`);
 
     } catch (error) {
-      console.error('Error scraping Free People:', error);
+      console.error('❌ Free People scraping failed:', error);
+      throw error; // Don't return empty array
     }
 
     return deals;
@@ -204,144 +219,4 @@ export class SimpleScraper {
     return 'top';
   }
 
-  private getMockAritziaDeals(): Deal[] {
-    return [
-      {
-        id: 'aritzia-mock-1',
-        title: 'Wilfred Free Babaton T-Shirt',
-        brand: 'aritzia',
-        originalPrice: 45,
-        salePrice: 25,
-        size: 'M',
-        clothingType: 'top',
-        imageUrl: 'https://via.placeholder.com/300x400?text=Aritzia+Top',
-        productUrl: 'https://www.aritzia.com/us/en/sale',
-        inStock: true,
-        scrapedAt: new Date(),
-      },
-      {
-        id: 'aritzia-mock-2',
-        title: 'Wilfred Free Denim Jacket',
-        brand: 'aritzia',
-        originalPrice: 98,
-        salePrice: 68,
-        size: 'S',
-        clothingType: 'outerwear',
-        imageUrl: 'https://via.placeholder.com/300x400?text=Aritzia+Jacket',
-        productUrl: 'https://www.aritzia.com/us/en/sale',
-        inStock: true,
-        scrapedAt: new Date(),
-      },
-    ];
-  }
-
-  private getMockReformationDeals(): Deal[] {
-    return [
-      {
-        id: 'reformation-mock-1',
-        title: 'Reformation Floral Dress',
-        brand: 'reformation',
-        originalPrice: 128,
-        salePrice: 78,
-        size: 'S',
-        clothingType: 'dress',
-        imageUrl: 'https://via.placeholder.com/300x400?text=Reformation+Dress',
-        productUrl: 'https://www.thereformation.com/collections/sale',
-        inStock: true,
-        scrapedAt: new Date(),
-      },
-      {
-        id: 'reformation-mock-2',
-        title: 'Reformation Silk Blouse',
-        brand: 'reformation',
-        originalPrice: 88,
-        salePrice: 58,
-        size: 'M',
-        clothingType: 'shirt',
-        imageUrl: 'https://via.placeholder.com/300x400?text=Reformation+Blouse',
-        productUrl: 'https://www.thereformation.com/collections/sale',
-        inStock: true,
-        scrapedAt: new Date(),
-      },
-    ];
-  }
-
-  private getMockFreePeopleDeals(): Deal[] {
-    return [
-      {
-        id: 'freepeople-mock-1',
-        title: 'Free People Boho Top',
-        brand: 'free-people',
-        originalPrice: 78,
-        salePrice: 48,
-        size: 'M',
-        clothingType: 'top',
-        imageUrl: 'https://via.placeholder.com/300x400?text=Free+People+Top',
-        productUrl: 'https://www.freepeople.com/sale',
-        inStock: true,
-        scrapedAt: new Date(),
-      },
-      {
-        id: 'freepeople-mock-2',
-        title: 'Free People Vintage Jeans',
-        brand: 'free-people',
-        originalPrice: 98,
-        salePrice: 68,
-        size: 'L',
-        clothingType: 'jeans',
-        imageUrl: 'https://via.placeholder.com/300x400?text=Free+People+Jeans',
-        productUrl: 'https://www.freepeople.com/sale',
-        inStock: true,
-        scrapedAt: new Date(),
-      },
-    ];
-  }
-
-  private async scrapeAritziaWithFallback(filters: SearchFilters): Promise<Deal[]> {
-    try {
-      console.log('🛍️ Trying Aritzia real scraping...');
-      const deals = await this.scrapeAritzia(filters);
-      if (deals.length > 0) {
-        console.log(`✅ Aritzia real scraping: ${deals.length} deals`);
-        return deals;
-      }
-    } catch (error) {
-      console.log('❌ Aritzia real scraping failed:', error);
-    }
-    
-    console.log('🎭 Using Aritzia mock data...');
-    return this.getMockAritziaDeals();
-  }
-
-  private async scrapeReformationWithFallback(filters: SearchFilters): Promise<Deal[]> {
-    try {
-      console.log('🌿 Trying Reformation real scraping...');
-      const deals = await this.scrapeReformation(filters);
-      if (deals.length > 0) {
-        console.log(`✅ Reformation real scraping: ${deals.length} deals`);
-        return deals;
-      }
-    } catch (error) {
-      console.log('❌ Reformation real scraping failed:', error);
-    }
-    
-    console.log('🎭 Using Reformation mock data...');
-    return this.getMockReformationDeals();
-  }
-
-  private async scrapeFreePeopleWithFallback(filters: SearchFilters): Promise<Deal[]> {
-    try {
-      console.log('🆓 Trying Free People real scraping...');
-      const deals = await this.scrapeFreePeople(filters);
-      if (deals.length > 0) {
-        console.log(`✅ Free People real scraping: ${deals.length} deals`);
-        return deals;
-      }
-    } catch (error) {
-      console.log('❌ Free People real scraping failed:', error);
-    }
-    
-    console.log('🎭 Using Free People mock data...');
-    return this.getMockFreePeopleDeals();
-  }
 }
