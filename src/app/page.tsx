@@ -75,9 +75,17 @@ export default function Home() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Shopping Agent
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 mb-4">
             Find the best deals from Aritzia, Reformation, and Free People
           </p>
+          <div className="flex justify-center space-x-4">
+            <a
+              href="/agents"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Manage Background Agents
+            </a>
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto">

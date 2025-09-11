@@ -11,14 +11,18 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.62.0",
     "@browserbasehq/sdk": "^2.6.0",
+    "@browserbasehq/stagehand": "^2.5.0",
     "@notionhq/client": "^5.0.0",
+    "@types/puppeteer": "^5.4.7",
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
     "next": "15.5.3",
+    "puppeteer": "^24.20.0",
     "puppeteer-core": "^24.20.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "stagehand-ai": "^1.0.0"
+    "stagehand-ai": "^1.0.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

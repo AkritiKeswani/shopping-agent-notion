@@ -26,8 +26,12 @@ Copy `.env.local` and fill in your API keys:
 # Cursor Background Agents API Key (already configured)
 CURSOR_BACKGROUND_AGENTS_API_KEY=key_5f8ffe692dd78b2b84788b3568cc3952b23f2088214285b30f4670777ed5bc62
 
-# Browserbase API Key (get from https://browserbase.com)
+# Browserbase API Key and Project ID (get from https://browserbase.com)
 BROWSERBASE_API_KEY=your_browserbase_api_key_here
+BROWSERBASE_PROJECT_ID=your_browserbase_project_id_here
+
+# OpenAI API Key for Stagehand (get from https://platform.openai.com)
+OPENAI_API_KEY=your_openai_api_key_here
 
 # Notion API Key (get from https://developers.notion.com)
 NOTION_API_KEY=your_notion_api_key_here
