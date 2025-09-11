@@ -29,6 +29,7 @@ export class BackgroundAgentsService {
             text: config.prompt
           },
           source: {
+            type: "repository",
             repository: config.repository
           },
           model: "claude-4-sonnet"
