@@ -37,17 +37,21 @@ export class SimpleScraper {
   }
 
   async scrapeAllBrands(filters: SearchFilters): Promise<ScrapingResult> {
-    // For now, return mock data to get frontend working
-    console.log('🎭 Using mock data for demo...');
-    
     const errors: string[] = [];
     const allDeals: Deal[] = [];
 
     try {
-      // Return mock deals for all brands
-      const aritziaDeals = this.getMockAritziaDeals();
-      const reformationDeals = this.getMockReformationDeals();
-      const freePeopleDeals = this.getMockFreePeopleDeals();
+      // Try real scraping first, fallback to mock data
+      console.log('🚀 Attempting real scraping...');
+      
+      if (!this.stagehand) {
+        await this.initialize();
+      }
+
+      // Try each brand with timeout and fallback
+      const aritziaDeals = await this.scrapeAritziaWithFallback(filters);
+      const reformationDeals = await this.scrapeReformationWithFallback(filters);
+      const freePeopleDeals = await this.scrapeFreePeopleWithFallback(filters);
       
       allDeals.push(...aritziaDeals, ...reformationDeals, ...freePeopleDeals);
 
@@ -291,5 +295,53 @@ export class SimpleScraper {
         scrapedAt: new Date(),
       },
     ];
+  }
+
+  private async scrapeAritziaWithFallback(filters: SearchFilters): Promise<Deal[]> {
+    try {
+      console.log('🛍️ Trying Aritzia real scraping...');
+      const deals = await this.scrapeAritzia(filters);
+      if (deals.length > 0) {
+        console.log(`✅ Aritzia real scraping: ${deals.length} deals`);
+        return deals;
+      }
+    } catch (error) {
+      console.log('❌ Aritzia real scraping failed:', error);
+    }
+    
+    console.log('🎭 Using Aritzia mock data...');
+    return this.getMockAritziaDeals();
+  }
+
+  private async scrapeReformationWithFallback(filters: SearchFilters): Promise<Deal[]> {
+    try {
+      console.log('🌿 Trying Reformation real scraping...');
+      const deals = await this.scrapeReformation(filters);
+      if (deals.length > 0) {
+        console.log(`✅ Reformation real scraping: ${deals.length} deals`);
+        return deals;
+      }
+    } catch (error) {
+      console.log('❌ Reformation real scraping failed:', error);
+    }
+    
+    console.log('🎭 Using Reformation mock data...');
+    return this.getMockReformationDeals();
+  }
+
+  private async scrapeFreePeopleWithFallback(filters: SearchFilters): Promise<Deal[]> {
+    try {
+      console.log('🆓 Trying Free People real scraping...');
+      const deals = await this.scrapeFreePeople(filters);
+      if (deals.length > 0) {
+        console.log(`✅ Free People real scraping: ${deals.length} deals`);
+        return deals;
+      }
+    } catch (error) {
+      console.log('❌ Free People real scraping failed:', error);
+    }
+    
+    console.log('🎭 Using Free People mock data...');
+    return this.getMockFreePeopleDeals();
   }
 }

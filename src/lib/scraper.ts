@@ -39,12 +39,38 @@ export class ShoppingScraper {
   }
 
   private filterProducts(products: Deal[], filters: SearchFilters): Deal[] {
-    return products.filter(product => {
-      if (filters.size && !product.size.toLowerCase().includes(filters.size.toLowerCase())) return false;
-      if (filters.maxPrice && product.salePrice > filters.maxPrice) return false;
-      if (filters.brands && !filters.brands.includes(product.brand)) return false;
-      if (filters.clothingType && product.clothingType !== filters.clothingType) return false;
+    console.log(`🔍 Filtering ${products.length} products with filters:`, filters);
+    
+    const filtered = products.filter(product => {
+      // Size filter - be more lenient
+      if (filters.size && product.size && !product.size.toLowerCase().includes(filters.size.toLowerCase())) {
+        console.log(`❌ Filtered out ${product.title} - size mismatch: ${product.size} vs ${filters.size}`);
+        return false;
+      }
+      
+      // Price filter
+      if (filters.maxPrice && product.salePrice > filters.maxPrice) {
+        console.log(`❌ Filtered out ${product.title} - price too high: ${product.salePrice} > ${filters.maxPrice}`);
+        return false;
+      }
+      
+      // Brand filter
+      if (filters.brands && filters.brands.length > 0 && !filters.brands.includes(product.brand)) {
+        console.log(`❌ Filtered out ${product.title} - brand not in list: ${product.brand}`);
+        return false;
+      }
+      
+      // Clothing type filter - be more lenient
+      if (filters.clothingType && product.clothingType && product.clothingType !== filters.clothingType) {
+        console.log(`❌ Filtered out ${product.title} - type mismatch: ${product.clothingType} vs ${filters.clothingType}`);
+        return false;
+      }
+      
+      console.log(`✅ Keeping ${product.title} (${product.brand}, ${product.clothingType}, ${product.size}, $${product.salePrice})`);
       return true;
     });
+    
+    console.log(`🎯 Filtered to ${filtered.length} deals`);
+    return filtered;
   }
 }
