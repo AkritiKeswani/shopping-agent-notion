@@ -271,9 +271,16 @@ export class CustomScrapers {
         const products = result.products || [];
         console.log(`📊 Extracted ${products.length} products from Aritzia via Stagehand AI`);
         
-        // Debug URL extraction
+        // Debug URL extraction and fix empty URLs
         products.forEach((product: any, index: number) => {
-          console.log(`🔗 Aritzia Product ${index + 1} URL: ${product.productUrl}`);
+          if (!product.productUrl || product.productUrl === '') {
+            // Create a working search URL for the product
+            const searchQuery = encodeURIComponent(product.name || '');
+            product.productUrl = `https://www.aritzia.com/us/en/sale?search=${searchQuery}&sort=price-low-to-high`;
+            console.log(`🔗 Aritzia Product ${index + 1} URL (generated): ${product.productUrl}`);
+          } else {
+            console.log(`🔗 Aritzia Product ${index + 1} URL (extracted): ${product.productUrl}`);
+          }
         });
         
         if (products.length > 0) {
@@ -391,7 +398,7 @@ export class CustomScrapers {
                 name: name.substring(0, 100), // Limit name length
                 price, 
                 imageUrl: imageUrl || 'https://via.placeholder.com/300x400?text=Aritzia+Sale',
-                productUrl: productUrl || `https://www.aritzia.com/us/en/sale?search=${encodeURIComponent(name || '')}`
+                productUrl: productUrl || `https://www.aritzia.com/us/en/sale?search=${encodeURIComponent(name || '')}&sort=price-low-to-high`
               });
               console.log(`Found product: ${name} - ${price}`);
             }
@@ -464,7 +471,7 @@ export class CustomScrapers {
       console.log('📊 Using Stagehand extract directly...');
       try {
         const result = await (page as any).extract({
-          instruction: "Extract product information from this Reformation sale page. Look for clothing items in the product grid. Each product should have: 1) Product name, 2) Sale price, 3) Original price if shown, 4) Product image URL, 5) Product page URL (click on each product to get the full URL). Focus on items that are clearly on sale with discounted prices. Make sure to extract the complete product page URLs, not just relative paths.",
+          instruction: "Extract product information from this Reformation sale page. Look for clothing items in the product grid. For each product: 1) Get the product name, 2) Get the sale price, 3) Get the product image URL, 4) MOST IMPORTANT: Click on each product to navigate to its individual product page and get the complete URL (must start with https://www.thereformation.com). If you can't click, look for the product link href attribute. Focus on items that are clearly on sale with discounted prices.",
           schema: z.object({
             products: z.array(
               z.object({
@@ -480,10 +487,17 @@ export class CustomScrapers {
         
         console.log(`📊 Extracted ${result.products?.length || 0} products from Reformation`);
         
-        // Debug URL extraction
+        // Debug URL extraction and fix empty URLs
         if (result.products) {
           result.products.forEach((product: any, index: number) => {
-            console.log(`🔗 Reformation Product ${index + 1} URL: ${product.productUrl}`);
+            if (!product.productUrl || product.productUrl === '') {
+              // Create a working search URL for the product
+              const searchQuery = encodeURIComponent(product.name || '');
+              product.productUrl = `https://www.thereformation.com/sale?search=${searchQuery}&sort=price-low-to-high`;
+              console.log(`🔗 Reformation Product ${index + 1} URL (generated): ${product.productUrl}`);
+            } else {
+              console.log(`🔗 Reformation Product ${index + 1} URL (extracted): ${product.productUrl}`);
+            }
           });
         }
         
@@ -506,7 +520,7 @@ export class CustomScrapers {
               size: filters.size || 'M',
               clothingType: (filters.clothingType as 'jeans' | 'shirt' | 'dress' | 'top' | 'bottom' | 'outerwear' | 'accessories') || 'top',
               imageUrl: product.imageUrl || '',
-              productUrl: product.productUrl || `https://www.thereformation.com/sale?search=${encodeURIComponent(product.name || '')}`,
+              productUrl: product.productUrl || `https://www.thereformation.com/sale?search=${encodeURIComponent(product.name || '')}&sort=price-low-to-high`,
               inStock: product.inStock !== undefined ? product.inStock : true,
               scrapedAt: new Date(),
             };
