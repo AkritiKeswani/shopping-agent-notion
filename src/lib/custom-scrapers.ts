@@ -253,14 +253,14 @@ export class CustomScrapers {
       console.log('📊 Using Stagehand extract directly...');
       try {
         const result = await (page as any).extract({
-          instruction: "Extract product information from this Aritzia sale page. Look for clothing items in the product grid. Each product should have: 1) Product name, 2) Sale price, 3) Original price if shown, 4) Product image URL, 5) Product page URL. Focus on items that are clearly on sale with discounted prices.",
+          instruction: "Extract product information from this Aritzia sale page. Look for clothing items in the product grid. Each product should have: 1) Product name, 2) Sale price, 3) Original price if shown, 4) Product image URL, 5) Product page URL (click on each product to get the full URL). Focus on items that are clearly on sale with discounted prices. Make sure to extract the complete product page URLs, not just relative paths.",
           schema: z.object({
             products: z.array(
               z.object({
                 name: z.string().describe("the product name"),
                 price: z.string().describe("the sale price"),
                 imageUrl: z.string().url().describe("the product image URL"),
-                productUrl: z.string().url().describe("the product page URL"),
+                productUrl: z.string().url().describe("the complete product page URL (must start with https://)"),
                 inStock: z.boolean().describe("whether the product is in stock")
               })
             )
@@ -270,6 +270,11 @@ export class CustomScrapers {
         console.log('🔍 Stagehand extraction result:', JSON.stringify(result, null, 2));
         const products = result.products || [];
         console.log(`📊 Extracted ${products.length} products from Aritzia via Stagehand AI`);
+        
+        // Debug URL extraction
+        products.forEach((product: any, index: number) => {
+          console.log(`🔗 Aritzia Product ${index + 1} URL: ${product.productUrl}`);
+        });
         
         if (products.length > 0) {
           return products.map((product: any, index: number) => {
@@ -386,7 +391,7 @@ export class CustomScrapers {
                 name: name.substring(0, 100), // Limit name length
                 price, 
                 imageUrl: imageUrl || 'https://via.placeholder.com/300x400?text=Aritzia+Sale',
-                productUrl: productUrl || 'https://www.aritzia.com/us/en/sale'
+                productUrl: productUrl || `https://www.aritzia.com/us/en/sale?search=${encodeURIComponent(name || '')}`
               });
               console.log(`Found product: ${name} - ${price}`);
             }
@@ -470,14 +475,14 @@ export class CustomScrapers {
       console.log('📊 Using Stagehand extract directly...');
       try {
         const result = await (page as any).extract({
-          instruction: "Extract product information from this Reformation sale page. Look for clothing items in the product grid. Each product should have: 1) Product name, 2) Sale price, 3) Original price if shown, 4) Product image URL, 5) Product page URL. Focus on items that are clearly on sale with discounted prices.",
+          instruction: "Extract product information from this Reformation sale page. Look for clothing items in the product grid. Each product should have: 1) Product name, 2) Sale price, 3) Original price if shown, 4) Product image URL, 5) Product page URL (click on each product to get the full URL). Focus on items that are clearly on sale with discounted prices. Make sure to extract the complete product page URLs, not just relative paths.",
           schema: z.object({
             products: z.array(
               z.object({
                 name: z.string().describe("the product name"),
                 price: z.string().describe("the sale price"),
                 imageUrl: z.string().url().describe("the product image URL"),
-                productUrl: z.string().url().describe("the product page URL"),
+                productUrl: z.string().url().describe("the complete product page URL (must start with https://)"),
                 inStock: z.boolean().describe("whether the product is in stock")
               })
             )
@@ -485,6 +490,13 @@ export class CustomScrapers {
         });
         
         console.log(`📊 Extracted ${result.products?.length || 0} products from Reformation`);
+        
+        // Debug URL extraction
+        if (result.products) {
+          result.products.forEach((product: any, index: number) => {
+            console.log(`🔗 Reformation Product ${index + 1} URL: ${product.productUrl}`);
+          });
+        }
         
         if (result.products && result.products.length > 0) {
           return result.products.map((product: any, index: number) => {
@@ -505,7 +517,7 @@ export class CustomScrapers {
               size: filters.size || 'M',
               clothingType: (filters.clothingType as 'jeans' | 'shirt' | 'dress' | 'top' | 'bottom' | 'outerwear' | 'accessories') || 'top',
               imageUrl: product.imageUrl || '',
-              productUrl: product.productUrl || 'https://www.thereformation.com/sale',
+              productUrl: product.productUrl || `https://www.thereformation.com/sale?search=${encodeURIComponent(product.name || '')}`,
               inStock: product.inStock !== undefined ? product.inStock : true,
               scrapedAt: new Date(),
             };
