@@ -1,3 +1,4 @@
+// Legacy types - keeping for backward compatibility
 export interface Deal {
   id: string;
   title: string;

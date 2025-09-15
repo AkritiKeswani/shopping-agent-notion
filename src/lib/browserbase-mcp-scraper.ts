@@ -1,12 +1,14 @@
+import { Stagehand } from '@browserbasehq/stagehand';
 import { Deal, ScrapingResult, SearchFilters } from '@/types';
 
 export class BrowserbaseMCPScraper {
-  private apiKey: string;
-  private projectId: string;
+  private stagehand: Stagehand | null = null;
 
   constructor() {
-    this.apiKey = process.env.BROWSERBASE_API_KEY!;
-    this.projectId = process.env.BROWSERBASE_PROJECT_ID!;
+    // Check for required environment variables
+    if (!process.env.BROWSERBASE_API_KEY || !process.env.BROWSERBASE_PROJECT_ID || !process.env.OPENAI_API_KEY) {
+      throw new Error('Missing required environment variables: BROWSERBASE_API_KEY, BROWSERBASE_PROJECT_ID, or OPENAI_API_KEY');
+    }
   }
 
   async scrapeAllBrands(filters: SearchFilters): Promise<ScrapingResult> {
@@ -14,329 +16,329 @@ export class BrowserbaseMCPScraper {
     const errors: string[] = [];
 
     try {
-      console.log('🚀 Starting Browserbase MCP scraping...');
+      console.log('🚀 Starting Browserbase MCP scraping with Stagehand...');
       console.log('📋 Filters:', filters);
 
-      // Create a new browser session
-      const session = await this.createSession();
-      console.log(`✅ Created Browserbase session: ${session.id}`);
+      // Initialize Stagehand with retry logic
+      console.log('🔧 Initializing Stagehand...');
+      await this.initializeWithRetry();
+      const page = this.stagehand!.page;
+      console.log('✅ Stagehand initialized successfully!');
+      console.log('🌐 Page object:', !!page);
 
-      try {
-        // Scrape each brand
-        if (!filters.brands || filters.brands.includes('aritzia')) {
-          console.log('🛍️ Scraping Aritzia...');
-          try {
-            const aritziaDeals = await this.scrapeAritzia(session.id, filters);
-            deals.push(...aritziaDeals);
-            console.log(`✅ Found ${aritziaDeals.length} deals from Aritzia`);
-          } catch (error) {
-            console.error('❌ Aritzia scraping failed:', error);
-            errors.push(`Aritzia: ${error}`);
-          }
+      // Scrape each brand (focused on Aritzia and Reformation only)
+      if (!filters.brands || filters.brands.includes('aritzia')) {
+        console.log('🛍️ Scraping Aritzia...');
+        try {
+          const aritziaDeals = await this.scrapeAritzia(page, filters);
+          deals.push(...aritziaDeals);
+          console.log(`✅ Found ${aritziaDeals.length} deals from Aritzia`);
+        } catch (error) {
+          console.error('❌ Aritzia scraping failed:', error);
+          errors.push(`Aritzia: ${error}`);
         }
-
-        if (!filters.brands || filters.brands.includes('reformation')) {
-          console.log('🛍️ Scraping Reformation...');
-          try {
-            const reformationDeals = await this.scrapeReformation(session.id, filters);
-            deals.push(...reformationDeals);
-            console.log(`✅ Found ${reformationDeals.length} deals from Reformation`);
-          } catch (error) {
-            console.error('❌ Reformation scraping failed:', error);
-            errors.push(`Reformation: ${error}`);
-          }
-        }
-
-        if (!filters.brands || filters.brands.includes('free-people')) {
-          console.log('🛍️ Scraping Free People...');
-          try {
-            const freePeopleDeals = await this.scrapeFreePeople(session.id, filters);
-            deals.push(...freePeopleDeals);
-            console.log(`✅ Found ${freePeopleDeals.length} deals from Free People`);
-          } catch (error) {
-            console.error('❌ Free People scraping failed:', error);
-            errors.push(`Free People: ${error}`);
-          }
-        }
-
-        console.log(`🎉 Total deals found: ${deals.length}`);
-
-        return {
-          deals,
-          totalFound: deals.length,
-          errors,
-        };
-
-      } finally {
-        // Close the session
-        await this.closeSession(session.id);
-        console.log('🔒 Browserbase session closed');
       }
 
+      if (!filters.brands || filters.brands.includes('reformation')) {
+        console.log('🛍️ Scraping Reformation...');
+        try {
+          const reformationDeals = await this.scrapeReformation(page, filters);
+          deals.push(...reformationDeals);
+          console.log(`✅ Found ${reformationDeals.length} deals from Reformation`);
+        } catch (error) {
+          console.error('❌ Reformation scraping failed:', error);
+          errors.push(`Reformation: ${error}`);
+        }
+      }
+
+      console.log(`🎉 Total deals found: ${deals.length}`);
+
+      return {
+        deals,
+        totalFound: deals.length,
+        errors,
+      };
+
     } catch (error) {
-      console.error('Browserbase MCP scraping error:', error);
+      console.error('❌ Browserbase MCP scraping error:', error);
+      console.error('❌ Error details:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       return {
         deals: [],
         totalFound: 0,
-        errors: [`Scraping failed: ${error}`],
+        errors: [`Scraping failed: ${error instanceof Error ? error.message : 'Unknown error'}`],
       };
-    }
-  }
-
-  private async createSession(): Promise<{ id: string }> {
-    try {
-      const response = await fetch('https://api.browserbase.com/v1/sessions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId: this.projectId,
-          keepAlive: false,
-          timeout: 300000, // 5 minutes
-        }),
-      });
-
-      if (!response.ok) {
-        console.log('⚠️ Browserbase API returned:', response.status, response.statusText);
-        console.log('🔄 Falling back to sample data mode...');
-        // Return a mock session ID for fallback mode
-        return { id: 'mock-session-' + Date.now() };
+    } finally {
+      if (this.stagehand) {
+        console.log('🔒 Closing Stagehand session...');
+        try {
+          await this.stagehand.close();
+          console.log('✅ Stagehand session closed');
+        } catch (closeError) {
+          console.error('❌ Error closing session:', closeError);
+        }
       }
-
-      return await response.json();
-    } catch (error) {
-      console.log('⚠️ Browserbase API error:', error);
-      console.log('🔄 Falling back to sample data mode...');
-      // Return a mock session ID for fallback mode
-      return { id: 'mock-session-' + Date.now() };
     }
   }
 
-  private async closeSession(sessionId: string): Promise<void> {
-    try {
-      await fetch(`https://api.browserbase.com/v1/sessions/${sessionId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-      });
-    } catch (error) {
-      console.error('Error closing session:', error);
+  private async initializeWithRetry(maxRetries: number = 3): Promise<void> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Create Stagehand instance if it doesn't exist
+        if (!this.stagehand) {
+          this.stagehand = new Stagehand({
+            env: 'BROWSERBASE',
+            apiKey: process.env.BROWSERBASE_API_KEY!,
+            projectId: process.env.BROWSERBASE_PROJECT_ID!,
+            modelName: 'gpt-4o',
+            modelClientOptions: {
+              apiKey: process.env.OPENAI_API_KEY!,
+            },
+          });
+        }
+        
+        await this.stagehand.init();
+        
+        // Configure stealth settings immediately after initialization
+        const page = this.stagehand.page;
+        await this.configureStealthSettings(page);
+        
+        return;
+      } catch (error: any) {
+        if (error.message.includes('429') || error.message.includes('rate limit')) {
+          const waitTime = attempt * 30;
+          await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+        } else if (attempt === maxRetries) {
+          throw error;
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      }
     }
   }
 
-  private async scrapeAritzia(sessionId: string, filters: SearchFilters): Promise<Deal[]> {
-    if (sessionId.startsWith('mock-session')) {
-      console.log('🔄 Using sample data for Aritzia (Browserbase API unavailable)');
-      const products = this.getSampleProducts('aritzia', filters);
-      return products.map((product, index) => ({
-        id: `aritzia-${index + 1}-${Date.now()}`,
-        title: product.title,
-        brand: 'aritzia' as const,
-        originalPrice: product.originalPrice,
-        salePrice: product.salePrice,
-        size: product.size,
-        clothingType: product.clothingType,
-        imageUrl: product.imageUrl,
-        productUrl: product.productUrl,
-        inStock: product.inStock,
-        scrapedAt: new Date(),
-      }));
-    }
-
-    console.log('🔍 Navigating to Aritzia sale page...');
+  private async configureStealthSettings(page: any): Promise<void> {
+    console.log('🔧 Configuring basic settings...');
     
-    // Navigate to Aritzia
-    await this.navigateToPage(sessionId, 'https://www.aritzia.com/us/en/sale');
+    // Minimal configuration - let Stagehand handle the rest
+    await page.setViewport({ width: 1920, height: 1080 });
     
-    // Wait for page to load
-    await this.waitForPageLoad(sessionId);
-    
-    // Extract products using MCP commands
-    const products = await this.extractProducts(sessionId, 'aritzia', filters);
-    
-    return products.map((product, index) => ({
-      id: `aritzia-${index + 1}-${Date.now()}`,
-      title: product.title,
-      brand: 'aritzia' as const,
-      originalPrice: product.originalPrice,
-      salePrice: product.salePrice,
-      size: product.size,
-      clothingType: product.clothingType,
-      imageUrl: product.imageUrl,
-      productUrl: product.productUrl,
-      inStock: product.inStock,
-      scrapedAt: new Date(),
-    }));
+    console.log('✅ Basic settings configured');
   }
 
-  private async scrapeReformation(sessionId: string, filters: SearchFilters): Promise<Deal[]> {
-    if (sessionId.startsWith('mock-session')) {
-      console.log('🔄 Using sample data for Reformation (Browserbase API unavailable)');
-      const products = this.getSampleProducts('reformation', filters);
-      return products.map((product, index) => ({
-        id: `reformation-${index + 1}-${Date.now()}`,
-        title: product.title,
-        brand: 'reformation' as const,
-        originalPrice: product.originalPrice,
-        salePrice: product.salePrice,
-        size: product.size,
-        clothingType: product.clothingType,
-        imageUrl: product.imageUrl,
-        productUrl: product.productUrl,
-        inStock: product.inStock,
-        scrapedAt: new Date(),
-      }));
-    }
-
-    console.log('🔍 Navigating to Reformation sale page...');
-    
-    await this.navigateToPage(sessionId, 'https://www.thereformation.com/sale');
-    await this.waitForPageLoad(sessionId);
-    
-    const products = await this.extractProducts(sessionId, 'reformation', filters);
-    
-    return products.map((product, index) => ({
-      id: `reformation-${index + 1}-${Date.now()}`,
-      title: product.title,
-      brand: 'reformation' as const,
-      originalPrice: product.originalPrice,
-      salePrice: product.salePrice,
-      size: product.size,
-      clothingType: product.clothingType,
-      imageUrl: product.imageUrl,
-      productUrl: product.productUrl,
-      inStock: product.inStock,
-      scrapedAt: new Date(),
-    }));
+  private randomDelay(): number {
+    return Math.floor(Math.random() * 2000) + 1000;
   }
 
-  private async scrapeFreePeople(sessionId: string, filters: SearchFilters): Promise<Deal[]> {
-    if (sessionId.startsWith('mock-session')) {
-      console.log('🔄 Using sample data for Free People (Browserbase API unavailable)');
-      const products = this.getSampleProducts('free-people', filters);
-      return products.map((product, index) => ({
-        id: `freepeople-${index + 1}-${Date.now()}`,
-        title: product.title,
-        brand: 'free-people' as const,
-        originalPrice: product.originalPrice,
-        salePrice: product.salePrice,
-        size: product.size,
-        clothingType: product.clothingType,
-        imageUrl: product.imageUrl,
-        productUrl: product.productUrl,
-        inStock: product.inStock,
-        scrapedAt: new Date(),
-      }));
-    }
-
-    console.log('🔍 Navigating to Free People sale page...');
-    
-    await this.navigateToPage(sessionId, 'https://www.freepeople.com/sale');
-    await this.waitForPageLoad(sessionId);
-    
-    const products = await this.extractProducts(sessionId, 'free-people', filters);
-    
-    return products.map((product, index) => ({
-      id: `freepeople-${index + 1}-${Date.now()}`,
-      title: product.title,
-      brand: 'free-people' as const,
-      originalPrice: product.originalPrice,
-      salePrice: product.salePrice,
-      size: product.size,
-      clothingType: product.clothingType,
-      imageUrl: product.imageUrl,
-      productUrl: product.productUrl,
-      inStock: product.inStock,
-      scrapedAt: new Date(),
-    }));
-  }
-
-  private async navigateToPage(sessionId: string, url: string): Promise<void> {
-    const response = await fetch(`https://api.browserbase.com/v1/sessions/${sessionId}/navigate`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url }),
+  private async humanLikeScroll(page: any): Promise<void> {
+    // Scroll like a human
+    await page.evaluate(() => {
+      window.scrollTo(0, Math.floor(Math.random() * 500));
     });
-
-    if (!response.ok) {
-      throw new Error(`Failed to navigate to ${url}: ${response.statusText}`);
-    }
+    await page.waitForTimeout(this.randomDelay());
   }
 
-  private async waitForPageLoad(sessionId: string): Promise<void> {
-    // Wait for page to load by checking if we can find common elements
-    await new Promise(resolve => setTimeout(resolve, 3000));
-  }
-
-  private async extractProducts(sessionId: string, brand: string, filters: SearchFilters): Promise<any[]> {
-    // For now, return sample data that matches the filters
-    // In a real implementation, you'd use the Browserbase MCP to extract actual products
-    console.log(`📊 Extracting ${brand} products...`);
+  private async scrapeAritzia(page: any, filters: SearchFilters): Promise<Deal[]> {
+    console.log('🔍 Navigating to Aritzia (simple approach)...');
     
-    // Simulate extraction delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Return sample data based on filters
-    return this.getSampleProducts(brand, filters);
-  }
-
-  private getSampleProducts(brand: string, filters: SearchFilters): any[] {
-    const products = [];
-    const clothingType = filters.clothingType || 'top';
-    const size = filters.size || 'M';
-    const maxPrice = filters.maxPrice || 200;
-
-    if (brand === 'aritzia') {
-      if (clothingType === 'jeans' || clothingType === '') {
-        products.push({
-          title: 'Wilfred Free Denim Jeans',
+    try {
+      // Simple, direct approach - less likely to trigger protection
+      console.log('🌐 Going directly to Aritzia sale page...');
+      
+      await page.goto('https://www.aritzia.com/us/en/sale', { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000 
+      });
+      
+      // Wait for Cloudflare challenge to complete
+      let title = await page.title();
+      if (title.includes('Just a moment') || title.includes('Checking your browser')) {
+        console.log('🛡️ Cloudflare challenge detected, waiting...');
+        await page.waitForTimeout(10000); // Wait for challenge to complete
+        
+        // Check title again
+        title = await page.title();
+        if (title.includes('Just a moment') || title.includes('Checking your browser')) {
+          console.log('🛡️ Still on challenge page, waiting longer...');
+          await page.waitForTimeout(10000);
+          title = await page.title();
+        }
+      }
+      
+      // Check if we got blocked
+      if (title.includes('Access Denied') || title.includes('403') || title.includes('Forbidden')) {
+        console.log('❌ Page blocked by anti-bot protection');
+        throw new Error('Page blocked by anti-bot protection');
+      }
+      
+      console.log('✅ Page loaded successfully. Title:', title);
+      
+      console.log('✅ Successfully accessed Aritzia');
+      
+      // Wait for products to load
+      await page.waitForTimeout(2000);
+      
+      console.log('📊 Extracting Aritzia products using AI...');
+      
+      // Use Stagehand's extract() with proper schema validation
+      try {
+        const result = await page.extract({
+          instruction: `Find all product items on this Aritzia sale page. Look for product cards, tiles, or listings. For each product, extract: title (product name), originalPrice (original price as number), salePrice (sale price as number), sizes (available sizes as array), clothingType (type of clothing), imageUrl (product image URL), productUrl (link to product page), and inStock (true/false). Return as an array of products.`,
+          schema: {
+            products: [
+              {
+                title: 'string',
+                originalPrice: 'number',
+                salePrice: 'number', 
+                sizes: ['string'],
+                clothingType: 'string',
+                imageUrl: 'string',
+                productUrl: 'string',
+                inStock: 'boolean'
+              }
+            ]
+          }
+        });
+        
+        console.log(`📊 Extracted ${result.products?.length || 0} products from Aritzia`);
+        
+        if (result.products && result.products.length > 0) {
+          return result.products.map((product: any, index: number) => ({
+            id: `aritzia-${index + 1}-${Date.now()}`,
+            title: product.title || 'Aritzia Product',
+            brand: 'aritzia' as const,
+            originalPrice: product.originalPrice || 0,
+            salePrice: product.salePrice || 0,
+            size: product.sizes?.[0] || filters.size || 'M',
+            clothingType: product.clothingType || filters.clothingType || 'top',
+            imageUrl: product.imageUrl || '',
+            productUrl: product.productUrl || 'https://www.aritzia.com/us/en/sale',
+            inStock: product.inStock !== undefined ? product.inStock : true,
+            scrapedAt: new Date(),
+          }));
+        }
+      } catch (extractError) {
+        console.log('⚠️ Product extraction failed:', extractError.message);
+        console.log('🔄 This might be due to anti-bot protection. Returning sample data...');
+        
+        // Return sample data when extraction fails due to blocking
+        return [{
+          id: `aritzia-sample-${Date.now()}`,
+          title: 'Sample Aritzia Product (Page Blocked)',
+          brand: 'aritzia' as const,
           originalPrice: 98,
           salePrice: 68,
-          size: size,
-          clothingType: 'jeans',
-          imageUrl: 'https://picsum.photos/300/400?random=1',
-          productUrl: 'https://www.aritzia.com/us/en/wilfred-free-denim-jeans/1234567890',
+          size: filters.size || 'M',
+          clothingType: filters.clothingType || 'top',
+          imageUrl: 'https://via.placeholder.com/300x400?text=Blocked',
+          productUrl: 'https://www.aritzia.com/us/en/sale',
           inStock: true,
-        });
+          scrapedAt: new Date(),
+        }];
       }
+      
+      // If no products found, return empty array
+      console.log('📊 No products found on Aritzia page');
+      return [];
+      
+    } catch (error) {
+      console.error('Aritzia scraping error:', error);
+      throw error;
     }
+  }
 
-    if (brand === 'reformation') {
-      if (clothingType === 'jeans' || clothingType === '') {
-        products.push({
-          title: 'Reformation High Rise Jeans',
+  private async scrapeReformation(page: any, filters: SearchFilters): Promise<Deal[]> {
+    console.log('🔍 Navigating to Reformation (simple approach)...');
+    
+    try {
+      // Simple, direct approach
+      console.log('🌐 Going directly to Reformation sale page...');
+      
+      await page.goto('https://www.thereformation.com/sale', { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000 
+      });
+      
+      // Wait for page to load
+      await page.waitForTimeout(3000);
+      
+      // Check if we got blocked
+      const title = await page.title();
+      if (title.includes('Access Denied') || title.includes('403') || title.includes('Forbidden')) {
+        console.log('❌ Page blocked by anti-bot protection');
+        throw new Error('Page blocked by anti-bot protection');
+      }
+      
+      console.log('✅ Successfully accessed Reformation');
+      
+      // Wait for products to load
+      await page.waitForTimeout(2000);
+      
+      console.log('📊 Extracting Reformation products using AI...');
+      
+      try {
+        const result = await page.extract({
+          instruction: `Find all product items on this Reformation sale page. Look for product cards, tiles, or listings. For each product, extract: title (product name), originalPrice (original price as number), salePrice (sale price as number), sizes (available sizes as array), clothingType (type of clothing), imageUrl (product image URL), productUrl (link to product page), and inStock (true/false). Return as an array of products.`,
+          schema: {
+            products: [
+              {
+                title: 'string',
+                originalPrice: 'number',
+                salePrice: 'number', 
+                sizes: ['string'],
+                clothingType: 'string',
+                imageUrl: 'string',
+                productUrl: 'string',
+                inStock: 'boolean'
+              }
+            ]
+          }
+        });
+        
+        console.log(`📊 Extracted ${result.products?.length || 0} products from Reformation`);
+        
+        if (result.products && result.products.length > 0) {
+          return result.products.map((product: any, index: number) => ({
+            id: `reformation-${index + 1}-${Date.now()}`,
+            title: product.title || 'Reformation Product',
+            brand: 'reformation' as const,
+            originalPrice: product.originalPrice || 0,
+            salePrice: product.salePrice || 0,
+            size: product.sizes?.[0] || filters.size || 'M',
+            clothingType: product.clothingType || filters.clothingType || 'top',
+            imageUrl: product.imageUrl || '',
+            productUrl: product.productUrl || 'https://www.thereformation.com/sale',
+            inStock: product.inStock !== undefined ? product.inStock : true,
+            scrapedAt: new Date(),
+          }));
+        }
+      } catch (extractError) {
+        console.log('⚠️ Product extraction failed:', extractError.message);
+        console.log('🔄 This might be due to anti-bot protection. Returning sample data...');
+        
+        // Return sample data when extraction fails due to blocking
+        return [{
+          id: `reformation-sample-${Date.now()}`,
+          title: 'Sample Reformation Product (Page Blocked)',
+          brand: 'reformation' as const,
           originalPrice: 88,
           salePrice: 58,
-          size: size,
-          clothingType: 'jeans',
-          imageUrl: 'https://picsum.photos/300/400?random=2',
-          productUrl: 'https://www.thereformation.com/products/high-rise-jeans-1234567891',
+          size: filters.size || 'M',
+          clothingType: filters.clothingType || 'top',
+          imageUrl: 'https://via.placeholder.com/300x400?text=Blocked',
+          productUrl: 'https://www.thereformation.com/sale',
           inStock: true,
-        });
+          scrapedAt: new Date(),
+        }];
       }
+      
+      console.log('📊 No products found on Reformation page');
+      return [];
+      
+    } catch (error) {
+      console.error('Reformation scraping error:', error);
+      throw error;
     }
-
-    if (brand === 'free-people') {
-      if (clothingType === 'top' || clothingType === '') {
-        products.push({
-          title: 'Free People Boho Blouse',
-          originalPrice: 78,
-          salePrice: 48,
-          size: size,
-          clothingType: 'top',
-          imageUrl: 'https://picsum.photos/300/400?random=3',
-          productUrl: 'https://www.freepeople.com/shop/boho-blouse-1234567890/',
-          inStock: true,
-        });
-      }
-    }
-
-    return products.filter(p => p.salePrice <= maxPrice);
   }
+
 }

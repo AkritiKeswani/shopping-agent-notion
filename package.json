@@ -9,20 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.62.0",
     "@browserbasehq/sdk": "^2.6.0",
     "@browserbasehq/stagehand": "^2.5.0",
     "@notionhq/client": "^5.0.0",
-    "@types/puppeteer": "^5.4.7",
-    "axios": "^1.11.0",
-    "cheerio": "^1.1.2",
-    "dotenv": "^17.2.2",
     "next": "15.5.3",
-    "node-fetch": "^3.3.2",
-    "puppeteer": "^24.20.0",
-    "puppeteer-core": "^24.20.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "thread-stream": "^3.1.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -31,9 +24,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.4.5",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "tailwindcss": "^4",
+    "tsx": "^4.20.5",
     "typescript": "^5"
   }
 }
