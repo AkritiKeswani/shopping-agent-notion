@@ -9,6 +9,14 @@ export class CustomScrapers {
   private stagehand: Stagehand | null = null;
 
   constructor() {
+    // Suppress "worker has exited" errors globally for cleaner logs
+    process.on('uncaughtException', (error) => {
+      if (error.message?.includes('worker has exited')) {
+        // Suppress these noisy errors
+        return;
+      }
+      console.error('Uncaught Exception:', error);
+    });
     if (!process.env.BROWSERBASE_API_KEY || !process.env.BROWSERBASE_PROJECT_ID) {
       throw new Error('Missing required environment variables: BROWSERBASE_API_KEY, BROWSERBASE_PROJECT_ID');
     }
@@ -79,8 +87,11 @@ export class CustomScrapers {
         try {
         await this.stagehand.close();
           console.log('✅ Stagehand session closed');
-        } catch (closeError) {
-          console.error('❌ Error closing session:', closeError);
+        } catch (closeError: any) {
+          // Suppress "worker has exited" errors as they're just cleanup noise
+          if (!closeError?.message?.includes('worker has exited')) {
+            console.error('❌ Error closing session:', closeError);
+          }
         }
       }
     }
