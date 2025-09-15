@@ -213,26 +213,15 @@ export class CustomScrapers {
       if (title.includes('Just a moment') || title.includes('Checking your browser')) {
         console.log('🛡️ Cloudflare challenge detected, waiting for resolution...');
         
-        // Wait for the challenge to be resolved - try multiple times
-        let attempts = 0;
-        const maxAttempts = 8; // 2 minutes total
+        // Simple approach: wait 30 seconds and continue
+        await page.waitForTimeout(30000);
+        title = await page.title();
+        console.log(`📄 After wait: Page title: ${title}`);
         
-        while (attempts < maxAttempts) {
-          await page.waitForTimeout(15000); // Wait 15 seconds
-          title = await page.title();
-          console.log(`📄 Attempt ${attempts + 1}: Page title: ${title}`);
-          
-          if (!title.includes('Just a moment') && !title.includes('Checking your browser')) {
-            console.log('✅ Cloudflare challenge resolved!');
-            break;
-          }
-          
-          attempts++;
-        }
-        
-        if (attempts >= maxAttempts) {
-          console.log('❌ Cloudflare challenge not resolved after 2 minutes, continuing anyway...');
-          // Continue scraping even if Cloudflare challenge isn't fully resolved
+        if (!title.includes('Just a moment') && !title.includes('Checking your browser')) {
+          console.log('✅ Cloudflare challenge resolved!');
+        } else {
+          console.log('⚠️ Cloudflare challenge still present, continuing anyway...');
         }
       }
       
@@ -448,26 +437,15 @@ export class CustomScrapers {
       if (title.includes('Just a moment') || title.includes('Checking your browser')) {
         console.log('🛡️ Cloudflare challenge detected, waiting for resolution...');
         
-        // Wait for the challenge to be resolved - try multiple times
-        let attempts = 0;
-        const maxAttempts = 8; // 2 minutes total
+        // Simple approach: wait 30 seconds and continue
+        await page.waitForTimeout(30000);
+        title = await page.title();
+        console.log(`📄 After wait: Page title: ${title}`);
         
-        while (attempts < maxAttempts) {
-          await page.waitForTimeout(15000); // Wait 15 seconds
-          title = await page.title();
-          console.log(`📄 Attempt ${attempts + 1}: Page title: ${title}`);
-          
-          if (!title.includes('Just a moment') && !title.includes('Checking your browser')) {
-            console.log('✅ Cloudflare challenge resolved!');
-            break;
-          }
-          
-          attempts++;
-        }
-        
-        if (attempts >= maxAttempts) {
-          console.log('❌ Cloudflare challenge not resolved after 2 minutes, continuing anyway...');
-          // Continue scraping even if Cloudflare challenge isn't fully resolved
+        if (!title.includes('Just a moment') && !title.includes('Checking your browser')) {
+          console.log('✅ Cloudflare challenge resolved!');
+        } else {
+          console.log('⚠️ Cloudflare challenge still present, continuing anyway...');
         }
       }
       

@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# developer notes (local reference only)
+DEVELOPER_EXPERIENCE.md
