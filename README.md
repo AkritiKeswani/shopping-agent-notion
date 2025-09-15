@@ -1,128 +1,231 @@
-# Shopping Agent with Notion Integration
+# Shopping Agent Notion
 
-A Next.js application that uses Cursor's Background Agents API to scrape deals from Aritzia, Reformation, and Free People, then saves them to a Notion database.
+A sophisticated web scraping and shopping assistant that helps you discover and save clothing items from popular fashion brands within your budget constraints.
 
-## Features
+## 🛍️ Features
 
-- 🔍 **Smart Deal Scraping**: Uses Background Agents API to scrape deals from multiple fashion retailers
-- 🎯 **Advanced Filtering**: Filter by clothing type, size, price range, and discount percentage
-- 📝 **Notion Integration**: Save discovered deals directly to your Notion database
-- 🎨 **Modern UI**: Built with Next.js, TypeScript, and Tailwind CSS
-- 📱 **Responsive Design**: Works perfectly on desktop and mobile devices
+### Smart Shopping Search
+- **Multi-brand Support**: Search across Aritzia and Reformation simultaneously
+- **Budget Management**: Set spending limits and get results that stay within your budget
+- **Size Filtering**: Find items in your preferred size
+- **Clothing Type Filtering**: Search for specific categories like tops, dresses, jeans, etc.
+- **Price Filtering**: Automatically excludes $0 items and items over budget
 
-## Supported Brands
+### Intelligent Results
+- **Fair Brand Distribution**: Ensures equal representation from both brands
+- **Smart Interleaving**: Results are mixed to provide variety
+- **Budget Enforcement**: Strict adherence to spending limits
+- **Real-time Pricing**: Live price data from retailer websites
 
-- **Aritzia**: Canadian fashion retailer with contemporary styles
-- **Reformation**: Sustainable fashion brand
-- **Free People**: Bohemian and vintage-inspired clothing
+### Notion Integration
+- **Automatic Saving**: Save discovered items directly to your Notion database
+- **Organized Storage**: Items are categorized with brand, price, size, and other details
+- **Easy Access**: View and manage your saved items in Notion
 
-## Setup Instructions
+## 🚀 Getting Started
 
-### 1. Environment Variables
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Notion account with API access
+- Browserbase account for cloud browser automation
+- OpenAI API key for Stagehand AI capabilities
 
-Copy `.env.local` and fill in your API keys:
+### Installation
 
-```bash
-# Cursor Background Agents API Key (already configured)
-CURSOR_BACKGROUND_AGENTS_API_KEY=key_5f8ffe692dd78b2b84788b3568cc3952b23f2088214285b30f4670777ed5bc62
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/AkritiKeswani/shopping-agent-notion.git
+   cd shopping-agent-notion
+   ```
 
-# Browserbase API Key and Project ID (get from https://browserbase.com)
-BROWSERBASE_API_KEY=your_browserbase_api_key_here
-BROWSERBASE_PROJECT_ID=your_browserbase_project_id_here
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-# OpenAI API Key for Stagehand (get from https://platform.openai.com)
-OPENAI_API_KEY=your_openai_api_key_here
+3. **Set up environment variables**
+   Create a `.env.local` file in the root directory:
+   ```env
+   # Browserbase Configuration
+   BROWSERBASE_API_KEY=your_browserbase_api_key
+   BROWSERBASE_PROJECT_ID=your_browserbase_project_id
+   
+   # OpenAI Configuration
+   OPENAI_API_KEY=your_openai_api_key
+   
+   # Notion Configuration
+   NOTION_API_KEY=your_notion_api_key
+   NOTION_DATABASE_ID=your_notion_database_id
+   ```
 
-# Notion API Key (get from https://developers.notion.com)
-NOTION_API_KEY=your_notion_api_key_here
+4. **Set up Notion Database**
+   - Create a new Notion database
+   - Add the following properties:
+     - **Name** (Title)
+     - **Brand** (Select)
+     - **Price** (Number)
+     - **Sizes** (Multi-select)
+     - **Wanted Size** (Select)
+     - **URL** (URL)
+     - **Image URL** (URL)
+     - **session URL** (URL)
+     - **Selected** (Checkbox)
+     - **Month** (Date)
+   - Copy the database ID from the URL and add it to your `.env.local`
 
-# Notion Database ID (create a database in Notion and get the ID)
-NOTION_DATABASE_ID=your_notion_database_id_here
+5. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-# Next.js
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
+6. **Open your browser**
+   Navigate to `http://localhost:3000`
 
-### 2. Notion Database Setup
+## 💡 How to Use
 
-Create a new database in Notion with the following properties:
+### Basic Search
+1. **Enter your search query** (e.g., "tops", "dresses", "jeans")
+2. **Select your size** from the dropdown
+3. **Choose brands** you want to search (Aritzia, Reformation, or both)
+4. **Set your budget** (e.g., $200, $500, $1000)
+5. **Click "Search"** to start the search
 
-- **Title** (Title): Product name
-- **Brand** (Select): Aritzia, Reformation, Free People
-- **Original Price** (Number): Original price
-- **Sale Price** (Number): Sale price
-- **Discount %** (Number): Discount percentage
-- **Size** (Rich Text): Available sizes
-- **Clothing Type** (Select): jeans, shirt, dress, top, bottom, outerwear, accessories
-- **Image URL** (URL): Product image
-- **Product URL** (URL): Link to product page
-- **In Stock** (Checkbox): Stock status
-- **Scraped At** (Date): When the deal was found
+### Understanding Results
+- **Budget Summary**: Shows total spend and remaining budget
+- **Brand Breakdown**: Number of items found per brand
+- **Item Details**: Each item shows name, brand, price, and size
+- **View Button**: Click to open the product page in a new tab
 
-### 3. Install Dependencies
+### Saving to Notion
+1. **Click "Save to Notion"** after getting results
+2. **Items are automatically saved** to your Notion database
+3. **Check your Notion workspace** to see the saved items
 
-```bash
-npm install
-```
+## 🎯 Use Cases
 
-### 4. Run the Development Server
+### Personal Shopping
+- Find items within your budget from multiple brands
+- Compare prices and styles across retailers
+- Save interesting items for later consideration
 
-```bash
-npm run dev
-```
+### Wardrobe Planning
+- Search for specific clothing types you need
+- Build outfits within budget constraints
+- Track items you're considering purchasing
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+### Sale Hunting
+- Discover discounted items across brands
+- Find items in your size during sales
+- Save items for price comparison
 
-## How to Use
+## 🔧 Technical Architecture
 
-1. **Search for Deals**: Use the search form to specify:
-   - Clothing type (jeans, shirts, dresses, etc.)
-   - Size preference
-   - Maximum price
-   - Minimum discount percentage
-   - Brands to search
+### Frontend
+- **Next.js 14** with App Router
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **Responsive design** for mobile and desktop
 
-2. **View Results**: Browse through the discovered deals with:
-   - Product images
-   - Brand information
-   - Price comparison
-   - Discount percentages
-   - Stock status
+### Backend
+- **API Routes** for search and save functionality
+- **Browserbase** for cloud browser automation and scraping
+- **Stagehand** for intelligent web interaction and data extraction
+- **MCP (Model Context Protocol)** for enhanced AI-powered scraping
+- **Data processing** and filtering
+- **Notion API integration**
 
-3. **Save to Notion**: Click "Save to Notion" to add all found deals to your database
+### Data Flow
+1. User submits search parameters
+2. **Browserbase** launches cloud browsers for each brand
+3. **Stagehand** with **MCP** intelligently navigates and extracts product data
+4. Results are filtered and processed with budget constraints
+5. Items are displayed with fair brand distribution
+6. Selected items can be saved to Notion database
 
-## API Endpoints
+## 📊 Budget Management
 
-- `POST /api/scrape` - Scrape deals from all brands
-- `POST /api/notion` - Save deals to Notion database
-- `GET /api/notion` - Retrieve saved deals from Notion
+The system includes sophisticated budget management:
+- **Pre-filtering**: Removes items over budget before display
+- **Fair distribution**: Ensures both brands are represented
+- **Strict enforcement**: Never exceeds your set budget
+- **Real-time calculation**: Shows exact spend and remaining budget
 
-## Architecture
+## 🛡️ Error Handling
 
-- **Frontend**: Next.js 14 with App Router, TypeScript, Tailwind CSS
-- **Backend**: Next.js API routes
-- **Scraping**: Cursor Background Agents API with Browserbase
-- **Database**: Notion API
-- **State Management**: React hooks
+- **Graceful degradation**: Continues working even if one brand fails
+- **Clear error messages**: User-friendly error reporting
+- **Retry mechanisms**: Automatic retry for failed requests
+- **Fallback options**: Alternative approaches when primary methods fail
 
-## Troubleshooting
+## 🔒 Privacy & Security
+
+- **No data storage**: Search results are not permanently stored
+- **Secure API keys**: Environment variables for sensitive data
+- **HTTPS only**: All communications are encrypted
+- **No tracking**: No user behavior tracking or analytics
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Connect your GitHub repository to Vercel
+2. Add environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
+
+### Other Platforms
+- **Netlify**: Compatible with static site generation
+- **Railway**: Good for full-stack applications
+- **AWS/GCP**: For enterprise deployments
+
+## 🤝 Contributing
+
+This is a personal project, but suggestions and improvements are welcome:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📝 License
+
+This project is for personal use. Please respect the terms of service of the websites being scraped.
+
+## 🆘 Troubleshooting
 
 ### Common Issues
 
-1. **Background Agents API Errors**: Ensure your API key is valid and has sufficient credits
-2. **Notion Integration Issues**: Check that your Notion API key has access to the database
-3. **Scraping Timeouts**: The scraping process can take 2-5 minutes depending on the websites
+**"No results found"**
+- Check your internet connection
+- Verify API keys are correct
+- Try a different search term
+
+**"Budget exceeded"**
+- This shouldn't happen with the current implementation
+- Check if you have the latest version
+
+**"Notion save failed"**
+- Verify Notion API key and database ID
+- Check database permissions
+- Ensure database has the required properties
+
+**"Scraping timeout"**
+- Some websites may be slow to respond
+- Try again in a few minutes
+- Check if the target websites are accessible
 
 ### Getting Help
+- Check the console for error messages
+- Verify all environment variables are set
+- Ensure you have the latest version of the code
 
-- Check the browser console for detailed error messages
-- Verify all environment variables are set correctly
-- Ensure your Notion database has the correct property structure
+## 🔮 Future Enhancements
 
-## Contributing
+- Support for additional clothing brands
+- Price tracking and alerts
+- Wishlist functionality
+- Size recommendation system
+- Style matching algorithms
+- Mobile app version
 
-Feel free to submit issues and enhancement requests!
+---
 
-## License
-
-MIT License
+**Note**: This tool is designed for personal use and educational purposes. Please respect the terms of service of the websites being accessed and use responsibly.
