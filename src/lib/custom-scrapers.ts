@@ -467,6 +467,19 @@ export class CustomScrapers {
         }
       }
       
+      // First, let's check what's actually on the page
+      console.log('🔍 Checking page content...');
+      const pageInfo = await page.evaluate(() => {
+        return {
+          title: document.title,
+          url: window.location.href,
+          hasProducts: document.querySelectorAll('[class*="product"], [data-testid*="product"], [class*="item"]').length,
+          hasPrices: document.querySelectorAll('*').length > 0 ? Array.from(document.querySelectorAll('*')).filter(el => el.textContent?.includes('$')).length : 0,
+          bodyText: document.body.textContent?.substring(0, 500) || 'No body text'
+        };
+      });
+      console.log('📄 Page info:', pageInfo);
+
       // Use Stagehand extract directly (now that dependencies are fixed)
       console.log('📊 Using Stagehand extract directly...');
       try {
@@ -534,31 +547,97 @@ export class CustomScrapers {
         console.error('❌ Reformation extraction failed:', extractError);
         console.log('🔄 Falling back to manual extraction...');
         
-        // Fallback to manual extraction
+        // Fallback to manual extraction - more aggressive approach
+        console.log('🔄 Using enhanced fallback extraction...');
         const products = await page.evaluate(() => {
           const results = [];
-          const allElements = document.querySelectorAll('*');
           
-          for (let i = 0; i < allElements.length; i++) {
-            const el = allElements[i];
+          // Try multiple selectors for products
+          const productSelectors = [
+            '[class*="product"]',
+            '[class*="item"]', 
+            '[class*="card"]',
+            '[data-testid*="product"]',
+            'article',
+            '.product-item',
+            '.product-card'
+          ];
+          
+          let productElements = [];
+          for (const selector of productSelectors) {
+            const elements = document.querySelectorAll(selector);
+            if (elements.length > 0) {
+              productElements = Array.from(elements);
+              console.log(`Found ${elements.length} elements with selector: ${selector}`);
+              break;
+            }
+          }
+          
+          // If no specific product elements, look for any elements with prices
+          if (productElements.length === 0) {
+            const allElements = document.querySelectorAll('*');
+            productElements = Array.from(allElements).filter(el => {
+              const text = el.textContent || '';
+              return text.includes('$') && /\$\d+/.test(text) && text.length > 10 && text.length < 300;
+            });
+            console.log(`Found ${productElements.length} elements with prices`);
+          }
+          
+          for (let i = 0; i < Math.min(productElements.length, 20); i++) {
+            const el = productElements[i];
             const text = el.textContent || '';
             
-            if (text.includes('$') && /\$\d+/.test(text) && text.length > 20 && text.length < 200) {
+            if (text.includes('$') && /\$\d+/.test(text)) {
               const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
               let name = '';
               let price = '';
+              let imageUrl = '';
+              let productUrl = '';
               
+              // Find price
               for (const line of lines) {
                 if (line.includes('$') && /\$\d+/.test(line)) {
                   price = line;
-                } else if (line.length > 10 && !line.includes('$') && !line.includes('Size') && !line.includes('Color')) {
-                  name = line;
+                  break;
                 }
               }
               
+              // Find name (look for longest text that's not price, size, color, etc.)
+              for (const line of lines) {
+                if (line.length > 10 && 
+                    !line.includes('$') && 
+                    !line.includes('Size') && 
+                    !line.includes('Color') &&
+                    !line.includes('Add to') &&
+                    !line.includes('Quick') &&
+                    !line.includes('View') &&
+                    line.length < 100) {
+                  name = line;
+                  break;
+                }
+              }
+              
+              // Find image
+              const img = el.querySelector('img') || el.closest('*')?.querySelector('img');
+              if (img) {
+                imageUrl = img.src || img.getAttribute('data-src') || '';
+              }
+              
+              // Find product URL
+              const link = el.querySelector('a') || el.closest('a');
+              if (link) {
+                productUrl = link.href || '';
+              }
+              
               if (name && price) {
-                results.push({ name, price, imageUrl: '', productUrl: '' });
-                if (results.length >= 10) break;
+                results.push({ 
+                  name: name.substring(0, 100), // Limit name length
+                  price, 
+                  imageUrl: imageUrl || 'https://via.placeholder.com/300x400?text=Reformation+Sale',
+                  productUrl: productUrl || ''
+                });
+                console.log(`Found product: ${name} - ${price}`);
+                if (results.length >= 15) break;
               }
             }
           }
