@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     const response: ShopResponse = {
       perBrand,
-      totals: { upserts: 0 }, // No auto-save to Notion
+      totals: { upserts: finalItems.length }, // Count of items ready to save
       budget,
       allItems: finalItems // Add the actual items to the response
     };
