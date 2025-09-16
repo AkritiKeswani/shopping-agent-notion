@@ -249,10 +249,11 @@ export class CustomScrapers {
       });
       console.log('📄 Page info:', pageInfo);
 
-      // Use Stagehand extract directly (now that dependencies are fixed)
-      console.log('📊 Using Stagehand extract directly...');
+      // Use Stagehand extract with better error handling
+      console.log('📊 Using Stagehand extract with error handling...');
+      let result;
       try {
-        const result = await (page as any).extract({
+        result = await (page as any).extract({
           instruction: "Extract product information from this Aritzia sale page. Look for clothing items in the product grid. Each product should have: 1) Product name, 2) Sale price, 3) Original price if shown, 4) Product image URL, 5) Product page URL (click on each product to get the full URL). Focus on items that are clearly on sale with discounted prices. Make sure to extract the complete product page URLs, not just relative paths.",
           schema: z.object({
             products: z.array(
@@ -266,10 +267,84 @@ export class CustomScrapers {
             )
           })
         });
+        console.log('✅ Stagehand extract completed successfully');
+      } catch (extractError) {
+        console.error('❌ Stagehand extract failed:', extractError);
+        console.log('🔄 Falling back to manual extraction...');
+        result = { products: [] };
+      }
         
         console.log('🔍 Stagehand extraction result:', JSON.stringify(result, null, 2));
-        const products = result.products || [];
+        let products = result.products || [];
         console.log(`📊 Extracted ${products.length} products from Aritzia via Stagehand AI`);
+        
+        // If Stagehand failed, use manual extraction
+        if (products.length === 0) {
+          console.log('🔄 Stagehand returned 0 products, using manual extraction...');
+          products = await page.evaluate(() => {
+            const results = [];
+            const productElements = document.querySelectorAll('[class*="product"], [data-testid*="product"], article, .product-item');
+            
+            for (let i = 0; i < Math.min(productElements.length, 20); i++) {
+              const el = productElements[i];
+              const text = el.textContent || '';
+              
+              if (text.includes('$') && /\$\d+/.test(text)) {
+                const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                let name = '';
+                let price = '';
+                let imageUrl = '';
+                let productUrl = '';
+                
+                // Find price
+                for (const line of lines) {
+                  if (line.includes('$') && /\$\d+/.test(line)) {
+                    price = line;
+                    break;
+                  }
+                }
+                
+                // Find name
+                for (const line of lines) {
+                  if (line.length > 10 && 
+                      !line.includes('$') && 
+                      !line.includes('Size') && 
+                      !line.includes('Color') &&
+                      !line.includes('Add to') &&
+                      line.length < 100) {
+                    name = line;
+                    break;
+                  }
+                }
+                
+                // Find image
+                const img = el.querySelector('img');
+                if (img) {
+                  imageUrl = img.src || img.getAttribute('data-src') || '';
+                }
+                
+                // Find product URL
+                const link = el.querySelector('a');
+                if (link) {
+                  productUrl = link.href || '';
+                }
+                
+                if (name && price) {
+                  results.push({ 
+                    name: name.substring(0, 100),
+                    price, 
+                    imageUrl: imageUrl || 'https://via.placeholder.com/300x400?text=Aritzia+Sale',
+                    productUrl: productUrl || '',
+                    inStock: true
+                  });
+                }
+              }
+            }
+            
+            return results;
+          });
+          console.log(`📊 Manual extraction found ${products.length} products from Aritzia`);
+        }
         
         // Debug URL extraction and fix empty URLs
         products.forEach((product: any, index: number) => {
